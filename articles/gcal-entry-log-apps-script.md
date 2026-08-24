@@ -3,7 +3,7 @@ title: "Googleカレンダーの「いつ登録したか」を見る画面をApp
 emoji: "📅"
 type: "tech"
 topics: ["googleappsscript", "gas", "googlecalendar", "clasp", "javascript"]
-published: false
+published: true
 ---
 
 Google カレンダーには「その予定が**いつ登録されたか**」で一覧する画面がありません。あるのは「いつ行われるか」で並ぶビューだけです。
