@@ -21,4 +21,4 @@ Pushing to `main` deploys. Set `published: true` to publish.
 | Slug | Title | State |
 | --- | --- | --- |
 | `gcal-entry-log-apps-script` | Googleカレンダーの「いつ登録したか」を見る画面をApps Scriptで作った | published |
-| `gas-webapp-viewport-addmetatag` | Apps Scriptのウェブアプリでviewportが効かない — HtmlServiceはmetaタグを消している | draft |
+| `gas-webapp-viewport-addmetatag` | Apps Scriptのウェブアプリでviewportが効かない — HtmlServiceはmetaタグを消している | published |

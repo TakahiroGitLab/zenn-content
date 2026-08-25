@@ -3,7 +3,7 @@ title: "Apps Scriptのウェブアプリでviewportが効かない — HtmlServi
 emoji: "📱"
 type: "tech"
 topics: ["googleappsscript", "gas", "html", "css", "javascript"]
-published: false
+published: true
 ---
 
 Apps Script で作ったウェブアプリをスマホで開いたら、PC 用のレイアウトがそのまま縮小されて、文字が読めないほど小さく表示される。
