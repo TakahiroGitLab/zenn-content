@@ -129,7 +129,11 @@ clasp push -f
 
 この話は、Google カレンダーの予定を「いつ登録したか」で一覧するツールを作っているときに踏んだものです。Calendar API に作成日時での検索がない件や、`clasp push` してもデプロイが更新されない件も含めて、別の記事にまとめてあります。
 
-https://zenn.dev/takagit/articles/gcal-entry-log-apps-script
+[Googleカレンダーの「いつ登録したか」を見る画面をApps Scriptで作った](https://zenn.dev/takagit/articles/gcal-entry-log-apps-script)
+
+見た目のすりガラス表現についても分けて書いています。
+
+[CSSでliquid glassを作る — backdrop-filterだけでは灰色の板にしかならない](https://zenn.dev/takagit/articles/css-liquid-glass-backdrop-filter)
 
 コードは MIT で公開しています。
 

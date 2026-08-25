@@ -117,6 +117,10 @@ function doGet() {
 
 これ 1 行で見え方が一変しました。Apps Script でスマホ対応の Web アプリを作るなら**最初に入れるべき行**だと思います。
 
+この件だけを掘り下げた記事も書きました。`addMetaTag()` で追加できるメタタグが 4 種類しかない話などを含みます。
+
+[Apps Scriptのウェブアプリでviewportが効かない — HtmlServiceはmetaタグを消している](https://zenn.dev/takagit/articles/gas-webapp-viewport-addmetatag)
+
 ### ついでのモバイル調整
 
 viewport が効くようになると、今度は PC 用の数値が窮屈になります。メディアクエリで調整しました。地味に効いたのは:
@@ -213,6 +217,10 @@ function onRoleChange() {
 
 `prefers-reduced-transparency`（macOS/iOS の「透明度を下げる」設定）でのフォールバックも入れてあります。
 
+こちらも別記事にまとめました。縁の光沢を `mask-composite` で作る方法など、実際のコードで分解しています。
+
+[CSSでliquid glassを作る — backdrop-filterだけでは灰色の板にしかならない](https://zenn.dev/takagit/articles/css-liquid-glass-backdrop-filter)
+
 ## まとめ
 
 - Calendar API は**作成日時で検索できない**。`updatedMin` で広く取って `created` で絞る
@@ -223,3 +231,8 @@ function onRoleChange() {
 コード全体は GitHub にあります。MIT なので、同じ困りごとがある方はそのまま使ってください。
 
 https://github.com/TakahiroGitLab/gcal-entry-log
+
+## 関連記事
+
+- [Apps Scriptのウェブアプリでviewportが効かない — HtmlServiceはmetaタグを消している](https://zenn.dev/takagit/articles/gas-webapp-viewport-addmetatag)
+- [CSSでliquid glassを作る — backdrop-filterだけでは灰色の板にしかならない](https://zenn.dev/takagit/articles/css-liquid-glass-backdrop-filter)

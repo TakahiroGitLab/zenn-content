@@ -3,7 +3,7 @@ title: "CSSでliquid glassを作る — backdrop-filterだけでは灰色の板�
 emoji: "🧊"
 type: "tech"
 topics: ["css", "html", "frontend", "ui", "design"]
-published: false
+published: true
 ---
 
 iOS や macOS のすりガラス風の表現を CSS でやろうとして、`backdrop-filter: blur()` を書いてみたものの、**なんとなく濁っているだけ**の板ができて終わった、という経験はないでしょうか。私はそうなりました。
