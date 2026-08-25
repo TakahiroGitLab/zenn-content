@@ -131,10 +131,6 @@ clasp push -f
 
 [Googleカレンダーの「いつ登録したか」を見る画面をApps Scriptで作った](https://zenn.dev/takagit/articles/gcal-entry-log-apps-script)
 
-見た目のすりガラス表現についても分けて書いています。
-
-[CSSでliquid glassを作る — backdrop-filterだけでは灰色の板にしかならない](https://zenn.dev/takagit/articles/css-liquid-glass-backdrop-filter)
-
 コードは MIT で公開しています。
 
 https://github.com/TakahiroGitLab/gcal-entry-log
