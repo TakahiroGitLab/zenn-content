@@ -217,6 +217,10 @@ function onRoleChange() {
 
 `prefers-reduced-transparency`（macOS/iOS の「透明度を下げる」設定）でのフォールバックも入れてあります。
 
+こちらも別記事にまとめました。縁の光沢を `mask-composite` で作る方法など、実際のコードで分解しています。
+
+[CSSでliquid glassを作る — backdrop-filterだけでは灰色の板にしかならない](https://zenn.dev/takagit/articles/css-liquid-glass-backdrop-filter)
+
 ## まとめ
 
 - Calendar API は**作成日時で検索できない**。`updatedMin` で広く取って `created` で絞る
@@ -231,3 +235,4 @@ https://github.com/TakahiroGitLab/gcal-entry-log
 ## 関連記事
 
 - [Apps Scriptのウェブアプリでviewportが効かない — HtmlServiceはmetaタグを消している](https://zenn.dev/takagit/articles/gas-webapp-viewport-addmetatag)
+- [CSSでliquid glassを作る — backdrop-filterだけでは灰色の板にしかならない](https://zenn.dev/takagit/articles/css-liquid-glass-backdrop-filter)
