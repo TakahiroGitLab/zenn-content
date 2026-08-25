@@ -2,7 +2,7 @@
 title: "CSSでliquid glassを作る — backdrop-filterだけでは灰色の板にしかならない"
 emoji: "🧊"
 type: "tech"
-topics: ["css", "html", "javascript", "frontend", "ui"]
+topics: ["css", "html", "frontend", "ui", "design"]
 published: true
 ---
 
