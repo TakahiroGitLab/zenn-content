@@ -243,73 +243,17 @@ view calendar at d   -- d の時刻部分は捨てられる
 
 月表示には間違える時刻がないので、月表示にしました。
 
-## 詰まりどころ 6: Xcode なしで SwiftUI アプリを作る
+## Xcode は使っていない
 
-この Mac には Xcode が入っていますが、**ライセンス同意が済んでおらず、同意には `sudo` が要ります**。使えるのは Command Line Tools だけ、という状態でした。
+この Mac には Xcode が入っていますが、ライセンス同意が済んでおらず、同意には `sudo` が要ります。使えるのは Command Line Tools だけ、という状態でした。
 
-結論から言うと、**SwiftUI アプリは Command Line Tools だけで作れます。**
+結論だけ書くと、**SwiftUI の Mac アプリは Command Line Tools だけで作れます。** `.app` は手で組めますし、テストは XCTest が入っていないので 100 行のハーネスを自分で書きました。この記事の 138 checks はそれです。
 
-### ビルド
+ただし **ad-hoc 署名だけは省略できません**。識別子が変わるとカレンダーの許可がビルドのたびに消えます。
 
-SwiftPM が CLT の SDK に対してビルドします。`MenuBarExtra` を含め、型検査は通ります。
+この辺りは EventKit と関係がないので、別記事にしました。
 
-```swift
-// Package.swift
-platforms: [.macOS(.v14)],
-products: [
-    .executable(name: "EntryLog", targets: ["EntryLogApp"]),
-]
-```
-
-### `.app` は 4 ファイルとディレクトリ構造
-
-バンドルは手で組めます。**重要なのは Info.plist で、これが権限ダイアログに出る名前を決めます。**
-
-```bash
-mkdir -p "${CONTENTS}/MacOS" "${CONTENTS}/Resources"
-cp ".build/release/EntryLog" "${CONTENTS}/MacOS/EntryLog"
-cat > "${CONTENTS}/Info.plist" <<PLIST
-...
-  <key>NSCalendarsFullAccessUsageDescription</key>
-  <string>...</string>
-  <key>NSAppleEventsUsageDescription</key>
-  <string>...</string>
-...
-PLIST
-```
-
-**コマンドラインにはバンドルがないので、権限要求は「ターミナル」名義になります。** システム設定のプライバシーで探すときも Terminal を探すことになるので、覚えておかないと混乱します。
-
-### ad-hoc 署名は省略できない
-
-```bash
-codesign --force --sign - --identifier "com.takahiromori.entrylog" "${APP}"
-```
-
-自分の Mac から出ないツールに署名は要らない気がしますが、**要ります**。署名がないと**ビルドのたびに別アプリ扱いになり、カレンダーの許可が毎回消えます**。identifier を固定して ad-hoc 署名しておけば、許可は引き継がれます。
-
-### XCTest も swift-testing も CLT には入っていない
-
-```
-error: no such module 'Testing'
-error: no such module 'XCTest'
-```
-
-どちらも Command Line Tools には同梱されていません。Xcode 側を `DEVELOPER_DIR` で指そうとしましたが、ここで前述のライセンス同意に阻まれました。
-
-**100 行ほどのハーネスを書いて、テストを `.executableTarget` にしました。**
-
-```swift
-// Package.swift
-.executableTarget(name: "CoreTests", dependencies: ["CalEntryCore"]),
-```
-
-```
-swift run core-tests
-→ 138 checks passed
-```
-
-失敗時に `file:line` を出すところまで作れば、実用上これで足ります。依存ゼロで、どこでも走ります。**書いたあと、わざと 1 行壊して落ちることを確認してください。** 何もテストしていないハーネスは静かに全部 pass します。
+[XcodeなしでSwiftUIのMacアプリを作る — .appは手で組めるが、ad-hoc署名だけは省略できない](https://zenn.dev/takagit/articles/swiftui-app-without-xcode)
 
 ## まとめ
 
@@ -322,13 +266,17 @@ swift run core-tests
 - **EventKit は作成者を記録しない。** `organizer` は招待者がいる予定にしかない
 - **Calendar.app へのジャンプは `event id ... of calendar ...`。** `whose uid` は走査で 2 分、直接参照なら 0.27 秒
 - **繰り返し予定は全回が同じ UID。** 重複排除では味方、特定の回を開くときは敵
-- **Xcode なしで SwiftUI アプリは作れる。** ただし ad-hoc 署名は必須で、テストは自前
+- **Xcode なしで SwiftUI アプリは作れる。** ただし ad-hoc 署名は必須で、テストは自前（[別記事](https://zenn.dev/takagit/articles/swiftui-app-without-xcode)）
 
 一点、これを人に配るなら直すべきところも書いておきます。**いまはメモの冒頭 50 文字をそのまま一覧に出しています。** 自分用には便利ですが、カレンダーのメモは玄関の暗証番号が書かれている可能性が予定のリマインダーと同じくらいあります。**画面に出すということはスクリーンショットに写るということ**なので、公開版では「メモあり」の印だけ出して、クリックで開く形にするつもりです。
 
 ---
 
-Google カレンダー版と、その過程で踏んだ落とし穴は別記事にまとめてあります。
+ビルドまわり（Xcode なしで SwiftUI アプリを作る話）は別記事です。
+
+[XcodeなしでSwiftUIのMacアプリを作る — .appは手で組めるが、ad-hoc署名だけは省略できない](https://zenn.dev/takagit/articles/swiftui-app-without-xcode)
+
+Google カレンダー版と、その過程で踏んだ落とし穴も別記事にまとめてあります。
 
 - [Googleカレンダーの「いつ登録したか」を見る画面をApps Scriptで作った](https://zenn.dev/takagit/articles/gcal-entry-log-apps-script)
 - [Apps Scriptのウェブアプリでviewportが効かない — HtmlServiceはmetaタグを消している](https://zenn.dev/takagit/articles/gas-webapp-viewport-addmetatag)
