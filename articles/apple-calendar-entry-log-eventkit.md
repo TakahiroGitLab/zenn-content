@@ -3,7 +3,7 @@ title: "Apple Calendarの「いつ登録したか」を見るMacアプリをEven
 emoji: "🍎"
 type: "tech"
 topics: ["swift", "swiftui", "eventkit", "macos", "applescript"]
-published: false
+published: true
 ---
 
 以前、Google カレンダーの予定を「**いつ登録したか**」で一覧するツールを Apps Script で作りました。

@@ -246,6 +246,10 @@ Xcode が使えないことは、思っていたより小さな制約でした�
 
 ---
 
-この方法で作ったのは、Apple Calendar の予定を「**いつ登録したか**」で一覧する Mac アプリです。EventKit 側で踏んだ落とし穴 — 作成日時では検索できない、認可前に作った `EKEventStore` は空のまま、`creationDate` が read-only でテストが書けない — については、稿を改めて書きます。
+この方法で作ったのは、Apple Calendar の予定を「**いつ登録したか**」で一覧する Mac アプリです。EventKit 側で踏んだ落とし穴 — 作成日時では検索できない、認可前に作った `EKEventStore` は空のまま、`creationDate` が read-only でテストが書けない — は別記事にまとめました。
+
+[Apple Calendarの「いつ登録したか」を見るMacアプリをEventKitで作った](https://zenn.dev/takagit/articles/apple-calendar-entry-log-eventkit)
+
+コードは MIT で公開しています。
 
 https://github.com/TakahiroGitLab/apple-cal-entry-log
