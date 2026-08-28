@@ -12,7 +12,7 @@ published: true
 
 同じものが Apple Calendar 側にも欲しくなったので、EventKit で作り直しました。SwiftUI の Mac アプリと、同じ内容を吐くコマンドラインの 2 つです。
 
-![Entry Log のウィンドウ。期間・プリセット・役割・カレンダーの絞り込みと、作成日時順に並んだ予定の一覧](/images/entry-log-demo.png)
+![Entry Log のウィンドウ。期間・プリセット・役割・カレンダーの絞り込みと、作成日時順に並んだ予定の一覧。自分で書いた予定には青い created、招待された予定にはオレンジの invited のバッジが付く](/images/entry-log-demo.png)
 *架空のデータを表示するデモモードのスクリーンショットです。理由は後述します。*
 
 **ソース**: https://github.com/TakahiroGitLab/apple-cal-entry-log （MIT）
