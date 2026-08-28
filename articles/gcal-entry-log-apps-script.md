@@ -232,7 +232,14 @@ function onRoleChange() {
 
 https://github.com/TakahiroGitLab/gcal-entry-log
 
+## その後: 同じものを Apple Calendar でも作った
+
+この軸が手放せなくなったので、Apple Calendar 版も作りました。EventKit の Mac アプリです。**やりたいことは同じなのに、詰まる場所が一つも重なりませんでした。** EventKit も作成日時では検索できない、という一点だけが共通です。
+
+[Apple Calendarの「いつ登録したか」を見るMacアプリをEventKitで作った](https://zenn.dev/takagit/articles/apple-calendar-entry-log-eventkit)
+
 ## 関連記事
 
 - [Apps Scriptのウェブアプリでviewportが効かない — HtmlServiceはmetaタグを消している](https://zenn.dev/takagit/articles/gas-webapp-viewport-addmetatag)
 - [CSSでliquid glassを作る — backdrop-filterだけでは灰色の板にしかならない](https://zenn.dev/takagit/articles/css-liquid-glass-backdrop-filter)
+- [XcodeなしでSwiftUIのMacアプリを作る — .appは手で組めるが、ad-hoc署名だけは省略できない](https://zenn.dev/takagit/articles/swiftui-app-without-xcode)

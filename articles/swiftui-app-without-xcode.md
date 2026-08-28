@@ -27,6 +27,7 @@ You have not agreed to the Xcode license agreements.
 | SwiftUI のコンパイル | **できる**（`MenuBarExtra` も含めて） |
 | `.app` バンドルの作成 | **できる**（手で組む） |
 | コード署名 | **できる**（ad-hoc） |
+| アプリアイコン | **できる**（`iconutil`） |
 | XCTest / swift-testing | **できない**（同梱されていない） |
 | Interface Builder、プレビュー、Instruments | できない |
 
@@ -39,10 +40,18 @@ You have not agreed to the Xcode license agreements.
 ```bash
 echo 'import SwiftUI
 @main struct A: App { var body: some Scene { WindowGroup { Text("hi") } } }' \
-  > /tmp/a.swift && swiftc -typecheck /tmp/a.swift && echo OK
+  > /tmp/a.swift && swiftc -parse-as-library -typecheck /tmp/a.swift && echo OK
 ```
 
 `OK` が出れば SDK は揃っています。私はここで**「Xcode が要る」という自分の思い込みが間違っていた**ことを知りました。
+
+**`-parse-as-library` を落とすと、SDK の有無と関係なく落ちます。**
+
+```
+error: 'main' attribute cannot be used in a module that contains top-level code
+```
+
+`swiftc` に単独のファイルを渡すと、その中身はトップレベルコードとして扱われます。`@main` は「エントリポイントはこの型だ」と宣言するものなので、両立しません。**SwiftUI が使えないという意味ではありません。** ここで諦めると、この記事と正反対の結論に着地します。
 
 ## 1. ビルドは SwiftPM に任せる
 
@@ -193,7 +202,7 @@ Role
   ok    Someone else's meeting with the user on the list means invited
 ...
 
-138 checks passed
+156 checks passed
 ```
 
 終了コードを返しているので、CI でもそのまま使えます。
@@ -206,7 +215,96 @@ Role
 
 書き終えたら、**わざとロジックを 1 行壊して、赤が出ることを確認してください。** これをやるまでは、そのハーネスは動作未確認です。
 
-## 5. `/Applications` に入れる
+## 5. アイコンも Xcode なしで付く
+
+ここまでで動くアプリになりますが、Dock には**白い書類の絵**が並びます。
+
+Xcode なら Asset Catalog に画像をドラッグして終わりです。それが使えなくても、**`.icns` は 2 コマンドで作れます。**
+
+### 必要なのは PNG 10 枚と `iconutil`
+
+`AppIcon.iconset` という名前のディレクトリに、**決まった名前の PNG** を入れます。名前が規約なので、1 枚でも欠けるか綴りを間違えると `iconutil` が黙って失敗します。
+
+| ファイル名 | ピクセル |
+| --- | --- |
+| `icon_16x16.png` / `icon_16x16@2x.png` | 16 / 32 |
+| `icon_32x32.png` / `icon_32x32@2x.png` | 32 / 64 |
+| `icon_128x128.png` / `icon_128x128@2x.png` | 128 / 256 |
+| `icon_256x256.png` / `icon_256x256@2x.png` | 256 / 512 |
+| `icon_512x512.png` / `icon_512x512@2x.png` | 512 / 1024 |
+
+あとは変換して、`Info.plist` に名前を書くだけです。
+
+```bash
+iconutil --convert icns \
+    --output "${CONTENTS}/Resources/AppIcon.icns" \
+    "${ROOT}/build/AppIcon.iconset"
+```
+
+```xml
+<key>CFBundleIconFile</key> <string>AppIcon</string>
+<key>CFBundleIconName</key> <string>AppIcon</string>
+```
+
+`.icns` は `Contents/Resources/` に置きます。拡張子を除いた名前を `CFBundleIconFile` に書く、という古い作法です。
+
+### PNG を 10 枚管理せず、コードで描く
+
+ここからは好みの話ですが、**画像ファイルをリポジトリに置かないことにしました。** 代わりに 200 行ほどの Swift スクリプトが、ビルドのたびに 10 枚を描き出します。
+
+```swift
+// Scripts/make-icon.swift
+let rect = CGRect(x: S * 0.055, y: S * 0.055,
+                  width: S * 0.89, height: S * 0.89)
+```
+
+**すべての寸法をキャンバス `S` に対する比率で書くのがポイントです。** こうすると 16px でも 1024px でも同じコードが成立するので、サイズごとの書き出しはループで済みます。
+
+```swift
+for (points, scale) in wanted {
+    let suffix = scale == 1 ? "" : "@2x"
+    guard let png = icon(size: CGFloat(points * scale)) else { exit(1) }
+    try png.write(to: directory
+        .appendingPathComponent("icon_\(points)x\(points)\(suffix).png"))
+}
+```
+
+利点は**色を変えたくなったときに分かります**。数値 1 つを直して再ビルドすれば 10 枚すべてが追従します。画像編集ソフトで 10 回書き出す作業が消えます。
+
+### 小さいサイズは「同じ絵の縮小」にしてはいけない
+
+これは実際に失敗して気づきました。
+
+作ったアイコンは、カレンダーの上に虫眼鏡が乗っている絵です。512px では意図どおりでした。**32px で書き出したら、ただの団子になりました。**
+
+当然で、32px の中で実際に絵に使えるのは 28px 程度です。そこにカレンダーのリング、罫線、8 個の日付、虫眼鏡を詰め込めば、**細部は細部にならず汚れになります。**
+
+そこで、しきい値を設けて絵そのものを変えました。
+
+```swift
+/// 16 点は絵に使える範囲が 11px しかない。リングも罫線も
+/// 8 個の日付も、そこでは 4 つの染みになる。染みは無いより悪い。
+let detailed: (CGFloat) -> Bool = { $0 >= 96 }
+```
+
+96px 未満では、リングと罫線と 7 個の日付を**描きません**。残すのはページの輪郭、虫眼鏡、そしてその中の点 1 つだけ。線幅も 1.5 倍にします。**同じアイコンの縮小版ではなく、同じ主題の別の絵**です。
+
+Apple 自身も昔から同じことをしています。Finder のアイコンを 16px と 512px で見比べると、描かれているものが違います。**コードで描いていると、この作り分けが `if` 一つで済みます。**
+
+### `make-app.sh` に組み込む
+
+```bash
+swift "${ROOT}/Scripts/make-icon.swift" "${ROOT}/build/AppIcon.iconset"
+iconutil --convert icns \
+    --output "${CONTENTS}/Resources/AppIcon.icns" \
+    "${ROOT}/build/AppIcon.iconset"
+```
+
+`swift` はスクリプトをそのまま実行できるので、コンパイル手順は要りません。ビルドが 2 秒ほど伸びますが、**アイコンだけ古い状態が発生しない**ことのほうが価値があります。
+
+なお **Dock はアイコンをキャッシュします。** 差し替えたのに変わらないときは、`.app` を `touch` して `killall Dock` してください。アイコンが悪いのかキャッシュなのか分からずに悩む、というのは避けられます。
+
+## 6. `/Applications` に入れる
 
 最後に、地味に効いた話を一つ。
 
@@ -234,12 +332,13 @@ codesign --verify --strict "${INSTALLED}"
 
 ## まとめ
 
-- **SwiftUI は Command Line Tools だけでコンパイルできる。** 先に `swiftc -typecheck` で 10 秒確認する
+- **SwiftUI は Command Line Tools だけでコンパイルできる。** 先に `swiftc -parse-as-library -typecheck` で 10 秒確認する（このフラグを落とすと `@main` が通らない）
 - **`.app` はディレクトリと `Info.plist` と実行ファイル。** 手で組める
 - **バンドルがないと、権限要求は「ターミナル」名義になる。** 自分の名前で求めたいなら `.app` にする
 - **ad-hoc 署名（`codesign --sign -`）は省略できない。** 識別子が変わると許可が毎回消える
 - **XCTest も swift-testing も入っていない。** 100 行のハーネスと `.executableTarget` で足りる
 - **自作ハーネスは、1 行壊して赤を見るまで動作未確認**
+- **アイコンは `.iconset` の PNG 10 枚 + `iconutil`。** コードで描けば色変更が 1 数値で済み、小サイズだけ絵を削るのも `if` 一つ
 - インストールは `rm -rf` してから `cp -R`
 
 Xcode が使えないことは、思っていたより小さな制約でした。**むしろ、ビルドが何をしているかが全部シェルスクリプトの上に見えている状態は、把握しやすくて悪くありません。**
