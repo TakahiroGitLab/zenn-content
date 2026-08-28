@@ -219,7 +219,7 @@ set e to first event whose uid = "..."
 tell application "Calendar"
     activate
     switch view to month view
-    show (event id "690F7F9F-..." of calendar "Regular work")
+    show (event id "A1B2C3D4-..." of calendar "Work")
 end tell
 ```
 
