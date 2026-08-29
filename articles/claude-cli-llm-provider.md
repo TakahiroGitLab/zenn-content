@@ -3,7 +3,7 @@ title: "APIキーなしで個人ツールにAIを足す — claude CLIは楽だ�
 emoji: "🔌"
 type: "tech"
 topics: ["claudecode", "python", "llm", "cli", "anthropic"]
-published: false
+published: true
 ---
 
 自分用の小さなツールに「AI に聞く」を足したくなることがあります。ワインのラベル写真からフィールドを埋める、行ったことのない店を提案してもらう、医学雑誌の新着号を要約する。どれも個人用で、使うのは自分ひとりです。

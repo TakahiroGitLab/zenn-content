@@ -3,7 +3,7 @@ title: "常駐させたclaude CLIがNot logged inになる — PATHを直して�
 emoji: "🔑"
 type: "tech"
 topics: ["macos", "launchd", "claudecode", "keychain", "launchagent"]
-published: false
+published: true
 ---
 
 Mac mini に常駐させた自作の Web アプリに、「AI に聞く」ボタンがあります。中身は `claude -p` を subprocess で叩くだけの、ごく単純なものです。
@@ -41,7 +41,7 @@ plist で明示すれば直ります。
 <key>EnvironmentVariables</key>
 <dict>
     <key>PATH</key>
-    <string>/Users/taka/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <string>/Users/<you>/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
 </dict>
 ```
 
