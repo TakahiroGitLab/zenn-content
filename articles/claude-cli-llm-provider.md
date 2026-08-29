@@ -273,25 +273,14 @@ for i in range(0, len(remaining), BATCH_SIZE):
 
 ただ、実際にタイムアウトを解消したのはバッチ分割そのものより、**モデルを Haiku に落としたこと**でした。「何の話か + 何が新しいか」を数文書くだけなら十分ですし、生成が目に見えて速い。上位モデルの使用量を使う理由がありませんでした。`--model` は引数 1 つなので、試すコストもほぼゼロです。
 
-## 詰まりどころ 7: LaunchDaemon では `claude` は動かない
+## 常駐させるなら LaunchAgent にする（別記事）
 
-Mac で常駐させる場合です。この構成の Web アプリを launchd に登録するとき、**LaunchDaemon にすると `claude -p` は動きません。** 理由が 2 段あります。
+Mac で launchd に登録して常駐させる場合、**LaunchDaemon にすると `claude -p` は動きません。** PATH がないので `claude` が見つからず、PATH を直しても今度は `Not logged in` になります。`claude` の OAuth 認証情報がログイン Keychain にあり、これはアクティブな GUI セッションの中からしか読めないためです。
 
-1. **PATH**。launchd はログインシェルの PATH を継がないので、`~/.local/bin/claude` は見つかりません。plist の `EnvironmentVariables` で明示すれば解決します
-2. **Keychain**。`claude` の OAuth 認証情報はログイン Keychain にあり、これは**アクティブな GUI セッションの中からしか読めません**。`UserName` に正しいユーザーを指定しても、LaunchDaemon はそのセッションの外にいるので `Not logged in` になります。**PATH をどれだけ正しくしても直りません**
+対処は `~/Library/LaunchAgents/` に置いて `launchctl bootstrap gui/$(id -u)` すること、代償は GUI にログインするまで起動しないことです。launchd の話であってこの記事の主題から外れるので、別記事に分けました。
 
-1 を直した後も動かないので、2 に気づくまで PATH を疑い続けました。
+[常駐させたclaude CLIがNot logged inになる — PATHを直しても直らない理由はKeychainにある](https://zenn.dev/takagit/articles/launchagent-claude-cli-keychain)
 
-`~/Library/LaunchAgents/` に置いて `gui/$(id -u)` に bootstrap すれば通ります。
-
-```bash
-cp deploy/com.example.myapp.plist ~/Library/LaunchAgents/
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.example.myapp.plist
-```
-
-代償として、**GUI にログインしていないと動きません**。FileVault を有効にしていると起動時に誰かがパスワードを打つ必要があるので、完全なヘッドレス運用はできなくなります。
-
-雑誌モニタでは、この性質に合わせてプロセスを 2 つに割りました。ファイルを配信するだけのサーバーは LaunchDaemon（ヘッドレス再起動でも生き残る）、`claude` を呼ぶ要約サーバーだけ LaunchAgent。常時動いてほしい部分が、`claude` まわりの都合で巻き添えにならずに済みます。
 
 ## 効いた小さな仕掛け 2 つ
 
@@ -334,4 +323,4 @@ if args.show_prompt:
 - **JSON を頼んでも JSON では返ってこない。** フェンスを剥がし、長さと型まで検証してからキャッシュに入れる
 - **長い仕事はバッチに割り、終わった分は次を始める前にディスクへ。** timeout はプロセスごと出力を捨てる
 - **モデルは落とせるなら落とす。** タイムアウトが消えたのは、バッチ分割よりモデル変更の効果が大きかった
-- **常駐させるなら LaunchAgent。** Keychain は GUI セッションの外から読めない。PATH の問題ではない
+- **常駐させるなら LaunchAgent。** Keychain は GUI セッションの外から読めないので、PATH をどれだけ直しても `Not logged in` は消えない（[別記事](https://zenn.dev/takagit/articles/launchagent-claude-cli-keychain)）
