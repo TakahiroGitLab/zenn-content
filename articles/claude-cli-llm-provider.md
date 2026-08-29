@@ -144,7 +144,26 @@ if allow_web:
 cmd += ["--", prompt]
 ```
 
-`--add-dir` も `--allowedTools` も**可変長のオプション**です。後ろに続く位置引数を値として食べ続けるので、`--` で切らないとプロンプト本体がオプションの引数になります。**エラーにならず、ただ意図しない動きをする**のが厄介なところです。
+`--help` を見ると、どちらも可変長だと分かります。
+
+```
+--add-dir <directories...>            Additional directories to allow tool
+--allowedTools, --allowed-tools <tools...>
+```
+
+`<...>` が付いているオプションは、後ろに続く位置引数を値として食べ続けます。`--` で切らないと、プロンプト本体がディレクトリ名やツール名として吸い込まれます。
+
+厄介なのは、**そのとき出るエラーが別のことを言う**点です。実際に試すとこうなります。
+
+```console
+$ claude -p --add-dir /tmp ZZZ-definitely-not-a-directory
+Error: Input must be provided either through stdin or as a prompt argument when using --print
+
+$ claude -p --allowedTools WebFetch ZZZ-my-prompt
+Error: Input must be provided either through stdin or as a prompt argument when using --print
+```
+
+「プロンプトを渡せ」と言われます。**渡しているのに、です。** プロンプトが直前のオプションに食われて、位置引数が 1 つも残らなかった結果なのですが、メッセージからはそう読めません。渡し方を疑ってクォートや改行をいじり始めると、しばらく戻ってこられません。
 
 ## 詰まりどころ 2: `check=True` は stderr を捨てる
 
@@ -162,9 +181,9 @@ if result.returncode != 0:
 return result.stdout.strip()
 ```
 
-## 詰まりどころ 3: timeout を書かないと、アプリ全体が止まる
+## 詰まりどころ 3: timeout がないと、そのリクエストは永遠に返らない
 
-Flask のような単一プロセスのアプリから呼ぶ場合です。`claude` が Web 検索で詰まると、**その 1 リクエストではなくサーバー全体が待たされます**。他のページも開けなくなる。
+`claude` が Web 検索で詰まると、`subprocess.run` は待ち続けます。timeout を書いていなければ、**そのリクエストは永遠に返りません。** ブラウザのタブは回り続け、スレッドも解放されません。
 
 ```python
 try:
@@ -173,7 +192,28 @@ except subprocess.TimeoutExpired:
     raise RuntimeError("AIの応答が180秒を超えました。条件を絞って再試行してください。")
 ```
 
-「AI は遅いことがある」ではなく「AI が遅いとツールが死ぬ」なので、timeout は最初から書いておく類のものでした。
+ここで、私が長らく誤解していたことを書いておきます。**「Flask の開発サーバーは 1 リクエストずつしか捌かないので、遅い AI 呼び出しが全ページを止める」と思っていました。違いました。**
+
+`app.run()` は **Flask 1.0 以降 `threaded=True` が既定**です。手元の Flask 3.1.3 の `Flask.run` にも、そのまま入っています。
+
+```python
+options.setdefault("threaded", True)
+```
+
+リクエストごとにスレッドが割り当てられるので、止まるのは「サーバー全体」ではなく「そのリクエスト」でした。明示的に `threaded=True` と書いても、既定の再確認にしかなりません。
+
+```python
+app.run(host="0.0.0.0", port=port, debug=debug, threaded=True)
+```
+
+とはいえ、**返らないリクエストが溜まっていくこと自体は困ります**し、timeout を入れない理由にはなりません。
+
+そして threaded であることには別の請求書が付いてきます。**共有状態にロックが要る**ことです。AI の提案は 1 分近くかかることがあり、スマホでブラウザをバックグラウンドに送ると、AI が答え終わっていてもタブが白くなって結果が消えます。そこで直近の結果をメモリに持たせたのですが、この変数はスレッド間で共有されるので、ロックで守る必要がありました。
+
+```python
+_last_suggestion_lock = threading.Lock()
+_last_suggestion = None
+```
 
 ## 詰まりどころ 4: 「無視してよい引数」は、エラーを出さずに嘘をつく
 
@@ -215,7 +255,7 @@ if envelope.get("is_error"):
 summaries = json.loads(envelope["result"])   # ← ここが素直にいかない
 ```
 
-`returncode == 0` でも `is_error` が立っていることがあるので、両方見ます。
+終了コードとエンベロープの `is_error` は別物なので、両方見ています。
 
 そして `result` の中身です。プロンプトで「マークダウンのフェンスなし、JSON 配列だけ」と明示しても、Haiku はしばしば ```` ```json ... ``` ```` で包んできます。前後に一言添えてくることもある。
 
@@ -281,7 +321,6 @@ Mac で launchd に登録して常駐させる場合、**LaunchDaemon にする�
 
 [常駐させたclaude CLIがNot logged inになる — PATHを直しても直らない理由はKeychainにある](https://zenn.dev/takagit/articles/launchagent-claude-cli-keychain)
 
-
 ## 効いた小さな仕掛け 2 つ
 
 どちらも実装は数行なのに、効き目が大きかったものです。
@@ -315,9 +354,9 @@ if args.show_prompt:
 
 - 個人ツールの AI 機能は、`claude -p` を subprocess で叩けば **API キーなし・追加課金なし**で作れる
 - `subprocess.run` は provider インターフェースの裏に隠す。**エンジン追加が「1 ファイル + 1 行」**で済む
-- **`--` を忘れない。** `--add-dir` や `--allowedTools` は可変長で、プロンプトを飲み込む
+- **`--` を忘れない。** `--add-dir` や `--allowedTools` は可変長でプロンプトを飲み込み、**エラーは「入力がない」と嘘の方向を指す**
 - **`check=True` は使わない。** stderr が消えて「ログインしていない」が伝わらなくなる
-- **timeout は必須。** 単一プロセスの Web アプリは、1 リクエストで全体が止まる
+- **timeout は必須。** ないとそのリクエストは永遠に返らない。ただし Flask の `app.run()` は既定で threaded なので、止まるのはサーバー全体ではない
 - **画像も Web も、パスと `--allowedTools` を渡すだけ。** API ならそれぞれ実装が要る
 - **「対応しない provider は無視してよい引数」は、エラーなく嘘を返す。** 能力フラグを持たせて基底クラスで弾く
 - **JSON を頼んでも JSON では返ってこない。** フェンスを剥がし、長さと型まで検証してからキャッシュに入れる
