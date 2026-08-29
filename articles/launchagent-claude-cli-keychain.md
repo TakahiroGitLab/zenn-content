@@ -189,7 +189,12 @@ tail -f ~/Library/Logs/RestaurantRating/webapp.err.log
 
 `launchctl print` を登録直後に叩くと、`state = xpcproxy` と出ることがあります。**これは起動途中であって、ハングではありません。** 少し待つと `running` に変わります。ここで慌てて `bootout` して registered/unregistered を往復すると、何が起きているか分からなくなります。
 
-なお、古い記事でよく見る `launchctl load -w` も動きますが、いまは `bootstrap` / `bootout` / `kickstart` のドメイン指定の形が正です。エラーメッセージもこちらのほうが親切です。
+なお、古い記事でよく見る `launchctl load -w` も動きますが、いまは `bootstrap` / `bootout` のドメイン指定の形が正です。`launchctl help` にもそう書いてあります。
+
+```
+load     Recommended alternatives: bootstrap | enable.
+unload   Recommended alternatives: bootout | disable.
+```
 
 ## まとめ
 

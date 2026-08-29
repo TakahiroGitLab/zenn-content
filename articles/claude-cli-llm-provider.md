@@ -117,12 +117,39 @@ def __init__(self):
 provider.ask(prompt_text, allowed_dirs=[image_path.parent])
 ```
 
-プロジェクトの外にあるファイルを指すときだけ、`--add-dir` でそのディレクトリを許可します。
+プロジェクトの外にあるファイルを指すときだけ、`--add-dir` でそのディレクトリを許可します。上下 3 色の帯を持つ PNG を作って試すと、こうなります。
+
+```console
+$ claude -p --add-dir /tmp -- 'Open the image at /tmp/band-test.png. Reply with ONLY the three horizontal colour bands, top to bottom.'
+Magenta, yellow, cyan
+```
+
+生成したとおりの並びです。**ここで注目したいのは、許可しなかった場合の振る舞いのほうです。** `--add-dir` を外すと、拒否されたことがエンベロープに残り、モデルも「見えていない」と言います。
+
+```console
+$ claude -p --output-format json -- 'Open the image at /tmp/band-test.png. ...'
+permission_denials: [{"tool_name": "Read", "tool_input": {"file_path": "/tmp/band-test.png"}}]
+result: "I can't read that file — the permission request ... was declined,
+         so I never saw the image and can't tell you what the bands are."
+```
+
+**読めなかったことを、読めなかったと言います。** これは後述の詰まりどころ 4 と正反対です。同じ「画像が読めない」でも、CLI 経由なら黙りませんでした。
 
 **Web**。`allow_web=True` で、その 1 回の呼び出しにだけ `WebSearch` と `WebFetch` を渡します。
 
 ```python
 cmd += ["--allowedTools", "WebFetch WebSearch"]
+```
+
+ツール名の並べ方は、スペース区切りでもカンマ区切りでも通ります。どちらも 1 つの引数として渡した場合です。
+
+```console
+$ claude -p --output-format json -- 'Fetch https://example.com and reply with ONLY the page title.'
+  拒否されたツール: ['WebFetch']
+$ claude -p --allowedTools "WebFetch WebSearch" -- '同上'
+  拒否されたツール: (なし) / result: Example Domain
+$ claude -p --allowedTools "WebSearch,WebFetch" -- '同上'
+  拒否されたツール: (なし) / result: Example Domain
 ```
 
 これで「実在して、いま営業している店」を提案させられます。学習データの中の店ではなく。店の URL を渡して商品リストを抜き出す、といった用途も同じ仕組みで済みます。
@@ -165,13 +192,25 @@ Error: Input must be provided either through stdin or as a prompt argument when 
 
 「プロンプトを渡せ」と言われます。**渡しているのに、です。** プロンプトが直前のオプションに食われて、位置引数が 1 つも残らなかった結果なのですが、メッセージからはそう読めません。渡し方を疑ってクォートや改行をいじり始めると、しばらく戻ってこられません。
 
-## 詰まりどころ 2: `check=True` は stderr を捨てる
+## 詰まりどころ 2: `check=True` の例外メッセージには、失敗の理由が入らない
 
-`subprocess.run(..., check=True)` は一見きれいです。しかし失敗時に投げる `CalledProcessError` のメッセージは `Command '...' returned non-zero exit status 1` だけで、**stderr が入っていません**。
+`subprocess.run(..., check=True)` は一見きれいです。しかし失敗時に投げる `CalledProcessError` を `str()` すると、こうなります。
 
-`claude` が落ちる理由はだいたい「ログインしていない」「レート制限」といった、ユーザーに伝えるべきものです。それが消えると、Web UI のエラーバナーには `str(exception)` 経由で「exit status 1」としか出ません。原因が分からない画面ができあがります。
+```
+Command '['/path/to/python3', 'failing.py']' returned non-zero exit status 1.
+```
 
-なので自分で見ます。
+**stderr の中身がありません。** `claude` が落ちる理由はだいたい「ログインしていない」「レート制限」といった、ユーザーに伝えるべきものです。それが消えると、Web UI のエラーバナーには `str(exception)` 経由で「exit status 1」としか出ません。原因が分からない画面ができあがります。
+
+正確に言うと、**捨てられているわけではありません。** `capture_output=True` なら例外オブジェクトの `exc.stderr` に中身は残っています。
+
+```python
+except subprocess.CalledProcessError as exc:
+    print(str(exc))     # Command '[...]' returned non-zero exit status 1.
+    print(exc.stderr)   # Not logged in
+```
+
+つまり `check=True` 自体が悪いのではなく、**`str(exception)` をそのまま画面に出す書き方と組み合わさると理由が消える**、という話です。捕まえて `exc.stderr` を読むなら `check=True` のままでも構いません。私は分岐を 1 つ減らしたかったので、自分で見る形にしました。
 
 ```python
 result = subprocess.run(cmd, capture_output=True, text=True)
@@ -199,6 +238,13 @@ except subprocess.TimeoutExpired:
 ```python
 options.setdefault("threaded", True)
 ```
+
+2 秒眠るだけのエンドポイントを立てて、同時に 2 本投げると差が出ます。
+
+| `app.run()` の指定 | 2 リクエスト同時発行の総時間 |
+| --- | --- |
+| 既定のまま | **2.04 秒**（並行） |
+| `threaded=False` を明示 | **4.04 秒**（直列） |
 
 リクエストごとにスレッドが割り当てられるので、止まるのは「サーバー全体」ではなく「そのリクエスト」でした。明示的に `threaded=True` と書いても、既定の再確認にしかなりません。
 
@@ -228,6 +274,8 @@ _last_suggestion = None
 `claude_api` は画像を読めません。`allowed_dirs` を受け取っても無視します。そこに `--image` 付きで `--provider claude_api` を指定すると、**画像パスがただの文字列としてモデルに渡り、モデルは開いてもいないファイルについて、自信たっぷりに答えます。**
 
 例外は出ません。ログにも何も出ません。ただ、まったく違うワインの説明が返ってきます。**動いているように見えるまま、内容だけが嘘**という壊れ方でした。
+
+上で見たとおり、`claude` CLI に画像を渡し忘れたときは「見えていない」と言ってくれます。**黙って嘘をついたのは CLI ではなく、こちらが書いた抽象化のほうでした。**
 
 対処は、呼び出し側で明示的に弾くこと。
 
@@ -363,3 +411,11 @@ if args.show_prompt:
 - **長い仕事はバッチに割り、終わった分は次を始める前にディスクへ。** timeout はプロセスごと出力を捨てる
 - **モデルは落とせるなら落とす。** タイムアウトが消えたのは、バッチ分割よりモデル変更の効果が大きかった
 - **常駐させるなら LaunchAgent。** Keychain は GUI セッションの外から読めないので、PATH をどれだけ直しても `Not logged in` は消えない（[別記事](https://zenn.dev/takagit/articles/launchagent-claude-cli-keychain)）
+
+---
+
+この記事に載せたコマンドと出力は、以下の環境で実際に実行して確かめたものです。
+
+- Claude Code 2.1.251 / macOS 26.5.2 / Python 3.9.6 / Flask 3.1.3
+- `--` を省いたときのエラーは、`--add-dir` と `--allowedTools` の両方で 2 回ずつ再現
+- `_extract_json_array` は、素の JSON・複数行フェンス・前後に一言・**同一行フェンス**の 4 パターンで確認
