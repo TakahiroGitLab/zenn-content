@@ -35,7 +35,15 @@ Not logged in
 
 launchd はログインシェルを経由しないので、`.zshrc` は読まれません。**`claude` コマンドがそもそも見つかりません。**
 
-plist で明示すれば直ります。
+どのくらい素っ気ないかというと、実際に `EnvironmentVariables` を書かない LaunchAgent を登録して `$PATH` を吐かせると、これだけです。
+
+```
+PATH=/usr/bin:/bin:/usr/sbin:/sbin
+which claude: claude not found
+probe.sh:9: command not found: claude
+```
+
+`~/.local/bin` はもちろん、Homebrew の `/opt/homebrew/bin` すら入っていません。plist で明示すれば直ります。
 
 ```xml
 <key>EnvironmentVariables</key>
@@ -43,6 +51,13 @@ plist で明示すれば直ります。
     <key>PATH</key>
     <string>/Users/<you>/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
 </dict>
+```
+
+同じジョブに上の `EnvironmentVariables` を足して登録し直すと、こう変わります。
+
+```
+PATH=/Users/taka/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+which claude: /Users/taka/.local/bin/claude
 ```
 
 **これは LaunchAgent でも LaunchDaemon でも同じく必要です。** どちらもログインシェルを通らないので、どちらでも書きます。
@@ -53,7 +68,15 @@ plist で明示すれば直ります。
 
 ## 詰まりどころ 2: ログイン Keychain は GUI セッションの外から読めない
 
-`claude` の OAuth 認証情報は、macOS の**ログイン Keychain** に入っています。
+`claude` の OAuth 認証情報は、macOS の**ログイン Keychain** に入っています。中身を見なくても、項目があることは確認できます。
+
+```console
+$ security find-generic-password -s "Claude Code-credentials" ~/Library/Keychains/login.keychain-db
+    "acct"<blob>="taka"
+    "svce"<blob>="Claude Code-credentials"
+```
+
+`login.keychain-db` の中です。システム Keychain ではありません。
 
 そしてログイン Keychain は、**アクティブな GUI セキュリティセッション（Aqua / loginwindow）の中からしか読めません。**
 
@@ -124,6 +147,16 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.taka.winenotes-webap
 
 **`sudo` は要りません。** ユーザー単位のエージェントであって、システムのデーモンではないからです。ここで `sudo` を打ちたくなったら、たぶん間違った方に進んでいます。
 
+この形で登録したジョブから `claude -p -- 'Reply with exactly: AGENT-OK'` を走らせると、素直に返ってきます。
+
+```
+which claude: /Users/taka/.local/bin/claude
+--- claude -p を実行:
+AGENT-OK
+```
+
+**GUI セッションの中にいる LaunchAgent からは、Keychain が読めています。**
+
 ## 代償: GUI にログインしていないと動かない
 
 いいことばかりではありません。**LaunchAgent は、誰かが実際に GUI にログインするまで起動しません。** OS が起動しただけでは動きません。
@@ -142,6 +175,14 @@ FileVault を有効にしていると、これは「**起動時に誰かがパ�
 | --- | --- | --- |
 | ファイル配信サーバー | **LaunchDaemon** | `claude` を触らない。ヘッドレス再起動でも生き残ってほしい |
 | 要約サーバー | **LaunchAgent** | `claude -p` を呼ぶ。Keychain が要る |
+
+置き場所を見れば、そのとおりに分かれています。
+
+```console
+com.paperbrief.checker           Daemon:あり  Agent:なし
+com.paperbrief.statusserver      Daemon:あり  Agent:なし
+com.paperbrief.summarizeserver   Daemon:なし  Agent:あり
+```
 
 plist にもその理由をコメントで書いてあります。
 
@@ -212,3 +253,11 @@ unload   Recommended alternatives: bootout | disable.
 この `claude` CLI を個人ツールから叩く構成そのもの（provider 層の作り方、`--` を忘れるとプロンプトが引数として食われる件、対応しない引数が黙って無視されて嘘の答えが返る件）については、別記事に分けて書きました。
 
 [APIキーなしで個人ツールにAIを足す — claude CLIは楽だが、無視された引数が静かに嘘をつく](https://zenn.dev/takagit/articles/claude-cli-llm-provider)
+
+---
+
+この記事の記述は、以下の環境で実際にジョブを登録して確かめました。
+
+- Claude Code 2.1.251 / macOS 26.5.2（FileVault On）/ uid 501
+- PATH の 2 つの出力は、`EnvironmentVariables` の有無だけを変えた LaunchAgent を `gui/501` に登録して採取（検証後に `bootout` で削除済み）
+- **ただし「system ドメインからは Keychain が読めない」ことだけは、この記事のために再現していません。** LaunchDaemon の設置に `sudo` が要るためです。根拠は 3 つの個人プロジェクトで実際に踏み、LaunchAgent へ移して直った記録によります
