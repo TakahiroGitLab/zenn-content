@@ -143,3 +143,7 @@ clasp push -f
 コードは MIT で公開しています。
 
 https://github.com/TakahiroGitLab/gcal-entry-log
+
+---
+
+`addMetaTag()` で指定できるメタタグが 4 種類だけであることと、HTML ファイルに直接書いた `<meta>` が無視されることは、いずれも [HtmlOutput の公式リファレンス](https://developers.google.com/apps-script/reference/html/html-output) の記述で確認しています（"Meta tags included directly in an Apps Script HTML file are ignored." / "Only the following meta tags are allowed:"）。入力欄の 16px と タップ領域 44px は実機で調整したときの値で、この記事のために再測定はしていません。

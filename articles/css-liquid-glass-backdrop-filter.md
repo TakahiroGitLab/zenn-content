@@ -67,7 +67,7 @@ backdrop-filter: blur(20px) saturate(180%);
 
 `blur` だけでも一応ガラスにはなりますが、**`saturate` を足すと一気にそれらしくなります。** ぼかすと色は平均化されて薄くなるので、彩度を持ち上げて戻してやる、という理屈です。Apple の表現が「ぼやけているのに色が濃い」のはこの効果です。
 
-Safari には `-webkit-` プレフィックスが必要です。
+Safari は 18 で無印に対応しましたが、それ以前を拾うなら `-webkit-` も併記します。逆に Chrome は無印のみで、`CSS.supports("-webkit-backdrop-filter","blur(1px)")` は `false` を返します。**両方書くのが結局いちばん安全です。**
 
 ```css
 -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -246,3 +246,7 @@ input:focus   { box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.18); }
 
 - [Apple Calendarの「いつ登録したか」を見るMacアプリをEventKitで作った](https://zenn.dev/takagit/articles/apple-calendar-entry-log-eventkit)
 - [XcodeなしでSwiftUIのMacアプリを作る — .appは手で組めるが、ad-hoc署名だけは省略できない](https://zenn.dev/takagit/articles/swiftui-app-without-xcode)
+
+---
+
+この記事の CSS は、ヘッドレス Chrome で実際に描画して確かめました。単色背景の上では本文のとおり平坦な板にしかならず、`radial-gradient` を敷いた背景の上でだけガラスに見えます。`mask-composite` を外した版も描画してみましたが、警告どおり疑似要素の白いグラデーションがカード全体を覆い、文字のコントラストが目に見えて落ちました。`@supports` は飾りではありません。`rgb(var(--accent-rgb) / 0.88)` は `rgba(124, 58, 237, 0.88)` として解決され、`prefers-reduced-transparency` も認識されています。

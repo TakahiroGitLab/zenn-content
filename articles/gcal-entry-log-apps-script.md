@@ -243,3 +243,7 @@ https://github.com/TakahiroGitLab/gcal-entry-log
 - [Apps Scriptのウェブアプリでviewportが効かない — HtmlServiceはmetaタグを消している](https://zenn.dev/takagit/articles/gas-webapp-viewport-addmetatag)
 - [CSSでliquid glassを作る — backdrop-filterだけでは灰色の板にしかならない](https://zenn.dev/takagit/articles/css-liquid-glass-backdrop-filter)
 - [XcodeなしでSwiftUIのMacアプリを作る — .appは手で組めるが、ad-hoc署名だけは省略できない](https://zenn.dev/takagit/articles/swiftui-app-without-xcode)
+
+---
+
+事実関係のうち公式ドキュメントで確認できるものを挙げておきます。`Events: list` の時刻系パラメータは `timeMin` / `timeMax` / `updatedMin` だけで、**作成日時で絞るものは存在しません**。Apps Script の実行時間上限は 1 回 6 分。`executeAs` は `USER_ACCESSING` が「アクセスした人として実行」、`USER_DEPLOYING` が「デプロイした人として実行」で、`access` は「誰が実行できるか」だけを決めます。`clasp` は 3.3.0 で `list-deployments` と `create-deployment -i <deploymentId>`（ヘルプの説明は "The deployment ID to redeploy"）、`push -f` を確認しました。
