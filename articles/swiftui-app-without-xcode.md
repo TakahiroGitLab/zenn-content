@@ -126,11 +126,36 @@ codesign --force --sign - --identifier "com.example.entrylog" "${APP}"
 
 `--sign -` が ad-hoc 署名で、証明書も Apple Developer Program も要りません。
 
-**これを飛ばすと、ビルドのたびにカレンダーの許可が消えます。**
+飛ばすとどうなるか。**バンドルとして壊れます。**
 
-macOS は許可を「アプリの識別子」に紐づけて覚えます。署名がないと、システムから見て**リビルドのたびに別のアプリ**になります。開発中は 1 日に何十回もビルドするので、そのたびに許可ダイアログが出ます。identifier を固定して ad-hoc 署名しておけば、許可は引き継がれます。
+```console
+$ codesign --verify --strict Bare.app
+Bare.app: code has no resources but signature indicates they must be present
+```
 
-**気づきにくい形で時間を溶かすので、最初から入れてください。**
+Apple Silicon では、リンカが実行ファイルに ad-hoc 署名を自動で付けます。なので「まったくの無署名」にはなりません。ただし付くのはバイナリだけで、**バンドルには `Contents/_CodeSignature/` ができません。** 結果、署名はリソースがあると言っているのにリソースの封印が無い、という上の状態になります。identifier も、`Info.plist` の `CFBundleIdentifier` ではなく**実行ファイル名**のままです。
+
+```console
+$ codesign -dv Bare.app | grep Identifier
+Identifier=Demo                    # ← バイナリ名。バンドルIDではない
+
+$ codesign --force --sign - --identifier com.example.demoapp Demo.app
+$ codesign -dv Demo.app | grep Identifier
+Identifier=com.example.demoapp     # ← 意図した識別子になる
+```
+
+私の場合、これを入れてからカレンダーの許可ダイアログがビルドのたびに出る状態が収まりました。ただし**その機序を「identifier に紐づくから」と説明するのは正しくないようです。** ad-hoc 署名の designated requirement を見ると、識別子ではなく `cdhash` で書かれていて、`--identifier` を固定していてもコードを変えれば変わります。
+
+```console
+$ codesign -d -r- Demo.app
+designated => cdhash H"8b98674d9132807854ecb8423c90fa87c875bfb2"
+$ # ソースを1行変えて再ビルド・再署名
+designated => cdhash H"4ba23ccd79452e2173fc7b83c5fd7062464f33f4"
+```
+
+確実に言えるのは、**署名しないとバンドルの検証が通らない**ことと、**識別子が意図したものにならない**ことです。そのうえで許可がどう保存されるかは、TCC のデータベースが Full Disk Access なしには読めないため、この記事では確かめられていません。
+
+いずれにせよ 1 行で済み、飛ばすと気づきにくい形で時間を溶かすので、最初から入れてください。
 
 ## 4. XCTest も swift-testing も入っていない
 
@@ -223,7 +248,22 @@ Xcode なら Asset Catalog に画像をドラッグして終わりです。そ�
 
 ### 必要なのは PNG 10 枚と `iconutil`
 
-`AppIcon.iconset` という名前のディレクトリに、**決まった名前の PNG** を入れます。名前が規約なので、1 枚でも欠けるか綴りを間違えると `iconutil` が黙って失敗します。
+`AppIcon.iconset` という名前のディレクトリに、**決まった名前の PNG** を入れます。名前が規約です。
+
+そして、ここが本当に厄介なところです。**1 枚欠けても、綴りを間違えても、`iconutil` は失敗しません。** 何も言わずに成功し、そのサイズだけ入っていない `.icns` を作ります。
+
+```console
+$ rm AppIcon.iconset/icon_128x128.png     # 1枚消す
+$ iconutil --convert icns --output missing.icns AppIcon.iconset
+$ echo $?
+0                                          # 何も言わない
+
+$ iconutil --convert iconset --output back.iconset missing.icns
+$ ls back.iconset
+icon_128x128@2x.png  icon_16x16.png  ...    # 128x128.png だけ無い
+```
+
+`exit 0` で、標準出力にも標準エラーにも何も出ません。**ビルドは通り、アイコンも付き、特定のサイズでだけ見た目が崩れます。** 失敗してくれたほうがまだ親切でした。
 
 | ファイル名 | ピクセル |
 | --- | --- |
@@ -335,10 +375,10 @@ codesign --verify --strict "${INSTALLED}"
 - **SwiftUI は Command Line Tools だけでコンパイルできる。** 先に `swiftc -parse-as-library -typecheck` で 10 秒確認する（このフラグを落とすと `@main` が通らない）
 - **`.app` はディレクトリと `Info.plist` と実行ファイル。** 手で組める
 - **バンドルがないと、権限要求は「ターミナル」名義になる。** 自分の名前で求めたいなら `.app` にする
-- **ad-hoc 署名（`codesign --sign -`）は省略できない。** 識別子が変わると許可が毎回消える
+- **ad-hoc 署名（`codesign --sign -`）は省略できない。** 飛ばすとバンドルの `--verify --strict` が通らず、識別子も実行ファイル名のままになる
 - **XCTest も swift-testing も入っていない。** 100 行のハーネスと `.executableTarget` で足りる
 - **自作ハーネスは、1 行壊して赤を見るまで動作未確認**
-- **アイコンは `.iconset` の PNG 10 枚 + `iconutil`。** コードで描けば色変更が 1 数値で済み、小サイズだけ絵を削るのも `if` 一つ
+- **アイコンは `.iconset` の PNG 10 枚 + `iconutil`。** 1 枚欠けても `iconutil` は黙って成功し、そのサイズだけ欠けた `.icns` ができる。コードで描けば色変更が 1 数値で済み、小サイズだけ絵を削るのも `if` 一つ
 - インストールは `rm -rf` してから `cp -R`
 
 Xcode が使えないことは、思っていたより小さな制約でした。**むしろ、ビルドが何をしているかが全部シェルスクリプトの上に見えている状態は、把握しやすくて悪くありません。**
@@ -352,3 +392,7 @@ Xcode が使えないことは、思っていたより小さな制約でした�
 コードは MIT で公開しています。
 
 https://github.com/TakahiroGitLab/apple-cal-entry-log
+
+---
+
+この記事のコマンドは、Command Line Tools だけの環境（`xcode-select -p` が `/Library/Developer/CommandLineTools`、Swift 6.3.2、macOS 26.5.2）で実際に実行して確かめました。SwiftUI の 10 秒チェック、`swift build`、`.app` の組み立て、ad-hoc 署名と `--verify --strict`、`import XCTest` / `import Testing` の失敗、`.iconset` から `.icns` への変換まで、出力は記事のとおりです。
