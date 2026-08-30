@@ -395,4 +395,4 @@ https://github.com/TakahiroGitLab/apple-cal-entry-log
 
 ---
 
-この記事のコマンドは、Command Line Tools だけの環境（`xcode-select -p` が `/Library/Developer/CommandLineTools`、Swift 6.3.2、macOS 26.5.2）で実際に実行して確かめました。SwiftUI の 10 秒チェック、`swift build`、`.app` の組み立て、ad-hoc 署名と `--verify --strict`、`import XCTest` / `import Testing` の失敗、`.iconset` から `.icns` への変換まで、出力は記事のとおりです。
+検証環境: Command Line Tools のみ（`xcode-select -p` = `/Library/Developer/CommandLineTools`）、Swift 6.3.2、macOS 26.5.2。

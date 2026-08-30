@@ -394,7 +394,3 @@ Google カレンダー版と、その過程で踏んだ落とし穴も別記事�
 - [Googleカレンダーの「いつ登録したか」を見る画面をApps Scriptで作った](https://zenn.dev/takagit/articles/gcal-entry-log-apps-script)
 - [Apps Scriptのウェブアプリでviewportが効かない — HtmlServiceはmetaタグを消している](https://zenn.dev/takagit/articles/gas-webapp-viewport-addmetatag)
 - [CSSでliquid glassを作る — backdrop-filterだけでは灰色の板にしかならない](https://zenn.dev/takagit/articles/css-liquid-glass-backdrop-filter)
-
----
-
-この記事のうち手元で再確認できたものを挙げておきます。4 年制限とその切り詰めは上記のとおり `EKEventStore.h` の記述、`creationDate` が read-only であることは代入してコンパイルエラーになること（`error: cannot assign to property: 'creationDate' is a get-only property`）、`organizer` が `nullable` であることはヘッダの宣言で確認しました。AppleScript の所要時間（`whose uid` の 2 分と直接参照の 0.27 秒）は、Calendar.app の自動化許可を要求してしまうため再測定していません。当時の実測値のままです。

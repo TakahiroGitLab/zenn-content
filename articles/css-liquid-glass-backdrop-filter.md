@@ -249,4 +249,4 @@ input:focus   { box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.18); }
 
 ---
 
-この記事の CSS は、ヘッドレス Chrome で実際に描画して確かめました。単色背景の上では本文のとおり平坦な板にしかならず、`radial-gradient` を敷いた背景の上でだけガラスに見えます。`mask-composite` を外した版も描画してみましたが、警告どおり疑似要素の白いグラデーションがカード全体を覆い、文字のコントラストが目に見えて落ちました。`@supports` は飾りではありません。`rgb(var(--accent-rgb) / 0.88)` は `rgba(124, 58, 237, 0.88)` として解決され、`prefers-reduced-transparency` も認識されています。
+検証環境: Google Chrome 151、macOS 26.5.2。

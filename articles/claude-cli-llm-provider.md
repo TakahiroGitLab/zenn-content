@@ -414,8 +414,4 @@ if args.show_prompt:
 
 ---
 
-この記事に載せたコマンドと出力は、以下の環境で実際に実行して確かめたものです。
-
-- Claude Code 2.1.251 / macOS 26.5.2 / Python 3.9.6 / Flask 3.1.3
-- `--` を省いたときのエラーは、`--add-dir` と `--allowedTools` の両方で 2 回ずつ再現
-- `_extract_json_array` は、素の JSON・複数行フェンス・前後に一言・**同一行フェンス**の 4 パターンで確認
+検証環境: Claude Code 2.1.251、macOS 26.5.2、Python 3.9.6、Flask 3.1.3。

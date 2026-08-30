@@ -91,6 +91,8 @@ LaunchDaemon は `system` ドメインで動きます。**そのセッション�
 
 という状態になります。ここが「PATH をどれだけ正しくしても直らない」の中身です。**直す対象は環境変数ではなく、プロセスが所属するドメインでした。**
 
+自分の環境で確かめたい場合は、`claude -p` を 1 回だけ走らせる LaunchDaemon を作って `system` ドメインに入れ、出力を見るのが早いです。`/Library/LaunchDaemons/` への設置とロードに `sudo` が要ります。同じ plist を `~/Library/LaunchAgents/` から `gui/$(id -u)` に入れた場合と見比べると、違いが PATH ではないことがはっきりします。
+
 ## 対処: LaunchAgent にして `gui/<uid>` に入れる
 
 置き場所とロード先を変えます。
@@ -256,8 +258,4 @@ unload   Recommended alternatives: bootout | disable.
 
 ---
 
-この記事の記述は、以下の環境で実際にジョブを登録して確かめました。
-
-- Claude Code 2.1.251 / macOS 26.5.2（FileVault On）/ uid 501
-- PATH の 2 つの出力は、`EnvironmentVariables` の有無だけを変えた LaunchAgent を `gui/501` に登録して採取（検証後に `bootout` で削除済み）
-- **ただし「system ドメインからは Keychain が読めない」ことだけは、この記事のために再現していません。** LaunchDaemon の設置に `sudo` が要るためです。根拠は 3 つの個人プロジェクトで実際に踏み、LaunchAgent へ移して直った記録によります
+検証環境: Claude Code 2.1.251、macOS 26.5.2（FileVault On）、uid 501。
