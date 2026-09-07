@@ -27,6 +27,18 @@ it never synced at all.) Either push again or press publish in the
 dashboard once the limit clears; the third article below spent a day
 like that before going live.
 
+A 403 only means "unpublished" for an article Zenn already holds. An
+article that is `published: false` by design has no public page either,
+so the same 404 covers both "synced as a draft" and "never arrived" —
+the deploy log is the only place that separates them.
+
+**A title may be at most 70 characters.** Over it the deploy log reads
+`デプロイ中断` with `保存に失敗しました（Titleには最大70文字まで使用でき
+ます）` naming the file — the run is aborted, not partially applied, so
+one long title holds up whatever else was in the push. The count is
+characters, not bytes: Japanese, the em-dash and spaces are one each.
+Existing titles run 42-62, so that band is the safe place to sit.
+
 ## Articles
 
 | Slug | Title | State |

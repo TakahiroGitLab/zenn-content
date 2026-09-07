@@ -1,5 +1,5 @@
 ---
-title: "Apps ScriptからGoogle Chatを読めない — Advanced Serviceで唯一、Chatだけが標準Cloudプロジェクトを要る"
+title: "Apps ScriptからGoogle Chatを読めない — Chatだけ標準Cloudプロジェクトが要る"
 emoji: "🚧"
 type: "tech"
 topics: ["googleappsscript", "gas", "googlechat", "googlecloud", "googleworkspace"]
