@@ -144,18 +144,22 @@
 
 環境: Google Apps Script（V8）、clasp 3.3.0、Google Workspace（GCP オフ）。
 
-実行して確かめたのは 1 点だけで、あとは公式ドキュメントで確認した。**Chat API は一度も呼べていない**ため、
+実行して確かめたのは 2 点で、あとは公式ドキュメントで確認した。**Chat API は一度も呼べていない**ため、
 記事も「前提条件の手前で止まった」ところまでしか書いていない。
+
+再確認 2026-09-08。課金の記述が誤っていたので記事を修正し、マニフェストの件は推測から実測に上げた。
 
 | 主張 | 方法 | 結果 |
 | --- | --- | --- |
 | 標準 Cloud プロジェクトを作れない | Cloud コンソールでプロジェクト作成を試行（gchat-preop-reminder） | `Google Cloud Platform service has been disabled` で拒否 |
+| Chat を宣言したマニフェストが既定プロジェクトのまま受理される | scratchpad に `.clasp.json` だけ置いて `clasp pull`（読み取りのみ、ローカルは上書きしていない） | リモートの 10 ファイルを取得。`appsscript.json` に `serviceId: chat / v1` と `chat.spaces.readonly` `chat.messages.readonly` が入っており、ローカルの `src/` と完全一致。標準プロジェクトを作らないまま push が通っていることを確認 |
 | Advanced Service は既定プロジェクトで足りる | Apps Script「拡張サービス」ドキュメント | "If using a default Google Cloud project (created automatically by Apps Script), skip this step. The API is enabled automatically when you add the service in Step 1." |
 | Chat だけ標準プロジェクトが要る | Chat Advanced Service ページの Prerequisites | "The app's Apps Script project must use a standard Google Cloud project instead of the default one created automatically for Apps Script projects." |
 | 構成ページでの Chat アプリ構成も前提 | 同 Prerequisites | "An Apps Script Google Chat app configured on the Chat API configuration page in the Google Cloud console." |
 | 構成ページで埋める項目 | Chat / Apps Script クイックスタート | App name / Avatar URL / Description / Connection settings（Apps Script）/ Deployment ID |
 | 管理コンソールで GCP をオフにできる | Workspace 管理者ヘルプ「その他の Google サービスを有効または無効にする」 | メニュー → アプリ → その他の Google サービス → サービスのステータス → オン／オフ（すべてのユーザー）。組織部門ごとに設定可 |
-| OAuth 同意画面「内部」なら審査不要 | Google 審査対象は外部公開アプリ。内部は同一 Workspace 内に限られる | ドキュメント準拠、未実施 |
+| OAuth 同意画面「内部」なら審査不要 | OAuth 審査の免除条件ページ | "The app is only used by people in your Google Workspace or Cloud Identity organization. The project must be owned by the organization, and its OAuth Consent Screen must be configured for internal use." **組織所有であることも条件**なので、記事に追記した |
+| Workspace 系 API の費用 | Calendar API クォータページ | "All standard use of the Google Calendar API is available at no additional cost." ただし **上限超過分の課金が 2026 年後半に予定**されている。「課金アカウントの紐付けは要らない」と断定していたのを撤回し、通常利用に追加費用がかからない旨の引用に差し替えた |
 
 ### 未検証
 - **Chat API の呼び出しそのもの。** `PreopPosts.js` は書いてあるが一度も実行できていない。
@@ -163,9 +167,12 @@
 - **「ユーザー認証で読むだけでも構成ページが要る」かどうか。** Advanced Service の Prerequisites には
   そう書かれているが、Chat API の認証ガイド側には明示がない。記事では前提条件の引用に留め、
   「読む側もアプリとして登録されている必要がある構えになっている」と書いた。
-- **課金アカウントが不要であること。** Workspace 系 API は無償という理解に基づく記述で、実際に
-  プロジェクトを作れていないので確認していない。
-- **Chat を宣言したマニフェストが既定プロジェクトのまま通ること。** `appsscript.json` に Chat の
-  Advanced Service と chat.* スコープを入れたまま `clasp push` し、週次実行（Calendar 読み取りと
-  メール送信）は動いている。記事の「マニフェストに書けてしまう／push も通る」はこの状態を根拠に
-  しているが、認可画面で chat.* スコープがどう出るかは確認していない。
+- **課金アカウントの要否。** プロジェクトを作れていないので、作成時に課金アカウントを求められるか
+  どうかは確認していない。記事は「通常利用に追加費用はかからない」までしか言っていない。
+- **認可画面で chat.* スコープがどう出るか。** マニフェストが受理されていることは確認したが、
+  同意画面の表示までは見ていない。
+- **既定プロジェクトのまま `Chat.Spaces.list()` を呼ぶと何が起きるか。** これが本当は一番効く再現
+  手順で、いまなら `probeSpaces()` をエディタから実行するだけで観測できる。ドキュメントの
+  「標準プロジェクトが要る」を、実際のエラーとして記事に載せられる。未実施。
+- **エラー文字列が原文どおりか。** `Google Cloud Platform service has been disabled` は
+  gchat-preop-reminder の README に記録されたもので、スクリーンショットは残っていない。

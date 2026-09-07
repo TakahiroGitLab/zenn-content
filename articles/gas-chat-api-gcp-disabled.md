@@ -88,13 +88,13 @@ Workspace の管理者は、これを組織ごと止められます。[管理コ
 
 組織部門ごとに設定できるので、「一部の部署だけオフ」という状態もあります。オフになっていると、その配下のユーザーは Cloud プロジェクトを作れません。冒頭のエラーはこれです。
 
-**これは費用の話ではありません。** Chat や Calendar のような Workspace 系 API の呼び出しに課金アカウントの紐付けは要らないので、「お金がかかるから止めている」わけではない。単に、組織のポリシーとして GCP を配っていない、というだけです。
+**費用が理由とは限りません。** [Calendar API のクォータのページ](https://developers.google.com/workspace/calendar/api/guides/quota)には "All standard use of the Google Calendar API is available at no additional cost." とあります（ただし上限を超えた分の課金は 2026 年後半に予定されている、とも書かれています）。通常の利用の範囲では、止める理由が請求書になるわけではない、ということです。
 
 なので、依頼するとしたら**頼むことは一点だけ**になります。
 
 - 管理コンソール → アプリ → その他の Google サービス → **Google Cloud Platform をオン**
 - 対象は組織部門で絞れる（全社に開ける必要はない）
-- OAuth 同意画面は**「内部」**にできるので、Google の審査は要らない
+- OAuth 同意画面を**「内部」**にすれば、Google の審査は要らない — [審査の免除条件](https://support.google.com/cloud/answer/13464323)に "The app is only used by people in your Google Workspace or Cloud Identity organization. The project must be owned by the organization, and its OAuth Consent Screen must be configured for internal use." とあります。**プロジェクトが組織所有であること**まで含めて条件です
 
 自分はこれが通りませんでした。以下は、通らなかった側の話です。
 
@@ -168,7 +168,7 @@ if (report.checkedSpace) {
 - **Chat だけは標準 Cloud プロジェクトを要求する。** 自分の権限で読むだけでも、Chat API 構成ページでアプリとして構成する必要がある
 - マニフェストには**書けてしまう**。書けた ＝ 使える、ではない
 - Workspace 管理者は「その他の Google サービス」で **GCP そのものをオフにできる**。オフだと標準プロジェクトが作れず、Chat は手前で詰む
-- 費用の問題ではないので、頼むことは「GCP をオンにする」の一点。組織部門で絞れて、OAuth 同意画面は「内部」なら審査も要らない
+- 頼むことは「GCP をオンにする」の一点。組織部門で絞れて、OAuth 同意画面が「内部」（かつプロジェクトが組織所有）なら Google の審査も要らない
 - 機能を落としたら、**出力にそう書く**。「確認して何もなかった」と「確認していない」を同じ見た目にしない
 
 Chat が読めるようになったら、この記事には続きが要ります。いまのところ、前提条件のところで止まっています。
