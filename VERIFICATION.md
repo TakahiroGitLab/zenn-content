@@ -144,7 +144,7 @@
 
 環境: Google Apps Script（V8）、clasp 3.3.0、Google Workspace（GCP はオフのまま）。
 
-**2026-09-08、記事の結論が実測でひっくり返った。** 初稿は「Chat の Advanced Service には標準
+**2026-09-08、記事の結論が実測でひっくり返り、09-09 に実運用まで確認できた。** 初稿は「Chat の Advanced Service には標準
 Cloud プロジェクトが要り、管理者が GCP を止めているので読めない」という内容で、根拠は前提条件の
 ドキュメントとプロジェクト作成の拒否だけだった。前提条件を満たさないまま `Chat.Spaces.list()` を
 呼んだところ通ったため、本文を書き直した。**諦める前に呼んでいなかったことが、この記事の元の誤り。**
@@ -153,6 +153,9 @@ Cloud プロジェクトが要り、管理者が GCP を止めているので読
 | --- | --- | --- |
 | 標準 Cloud プロジェクトを作れない | Cloud コンソールで作成を試行（2026-09-08、`Chat.Spaces.list()` 成功の約2時間後に再確認） | `Google Cloud Platform service has been disabled. Please contact your administrator to turn the service on in the Google Workspace Admin console.` |
 | 既定プロジェクトのまま Chat を読める | `probeSpaces()` をエディタから実行 | 参加スペース約100件を列挙。エラーなし。標準プロジェクトも Chat API 構成ページの Chat アプリも無い状態 |
+| メッセージ本文も読める | `probePreopMessages()` を実行（2026-09-08、開発セッション側） | 対象スペースから **498 件の投稿**を取得。`spaces.list` だけでなく `spaces.messages.list` も通る |
+| 照合機能が実運用に入った | `CHECK_PREOP_SPACE: true`、週次メールに「未提示 / 提示済み」が出ている | 前提条件を満たさない経路のまま稼働中 |
+| Advanced Service の例外にステータスコードが無い | `src/Api.js` の実装判断（開発セッション） | 読めるのはメッセージ文字列のみ。`worthRetrying()` は恒久的条件を名指すものだけ除外する反転判定 |
 | chat.* スコープが既定プロジェクトで認可される | 上と同じ実行（認可を経て成功） | `chat.spaces.readonly` `chat.messages.readonly` を宣言したまま実行できた |
 | Chat を宣言したマニフェストが受理される | scratchpad に `.clasp.json` だけ置いて `clasp pull`（読み取りのみ） | リモートの `appsscript.json` に `serviceId: chat / v1` と両スコープ。ローカル `src/` と完全一致 |
 | Advanced Service は既定プロジェクトで足りる | Apps Script「拡張サービス」ドキュメント | "If using a default Google Cloud project (created automatically by Apps Script), skip this step. The API is enabled automatically when you add the service in Step 1." |
@@ -162,9 +165,8 @@ Cloud プロジェクトが要り、管理者が GCP を止めているので読
 | 管理コンソールで GCP をオフにできる | Workspace 管理者ヘルプ「その他の Google サービスを有効または無効にする」 | メニュー → アプリ → その他の Google サービス → サービスのステータス。組織部門ごとに設定可 |
 
 ### 未検証
-- **`spaces.messages.list`。** 通ったのはスペース一覧だけで、メッセージ本文はまだ読んでいない。
-  記事にもそう書いた。ここを確かめずに「Chat は読める」と一般化するのは、前提条件を読んで
-  諦めたのと同じ間違いになる。次に `probePreopMessages()` を実行して確かめる。
+- **書き込み系。** 読み取り 2 種は確認したが、メッセージ投稿などは試していない。記事も
+  読み取りの話に限定してある。
 - **この挙動が保証されているか。** ドキュメントが要ると書いているものを満たさずに通っている以上、
   Google 側の実装都合で塞がりうる。記事は「2026-09-08 に動かした記録」として書いてある。
 - **管理者が設定を変えていないこと。** GCP は同日に無効のままであることを確認したが、
