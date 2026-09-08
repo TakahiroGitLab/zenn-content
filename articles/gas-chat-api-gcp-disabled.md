@@ -221,4 +221,4 @@ Apps Script の他の詰まりどころも書いています。
 - [Apps Scriptのウェブアプリでviewportが効かない — HtmlServiceはmetaタグを消している](https://zenn.dev/takagit/articles/gas-webapp-viewport-addmetatag)
 - [Googleカレンダーの「いつ登録したか」を見る画面をApps Scriptで作った](https://zenn.dev/takagit/articles/gcal-entry-log-apps-script)
 
-検証環境: Google Apps Script（V8 ランタイム）、clasp 3.3.0、Google Workspace（Google Cloud Platform は 2026-09-08 時点で管理者によりオフ。それ以降は未確認）。
+検証環境: Google Apps Script（V8 ランタイム）、clasp 3.3.0、Google Workspace（Google Cloud Platform は 2026-09-09 時点でも管理者によりオフのまま。設定が変わっていないことは管理者に確認済み）。
