@@ -3,7 +3,7 @@ title: "Apps ScriptのChatは既定Cloudプロジェクトのまま読めた —
 emoji: "🚧"
 type: "tech"
 topics: ["googleappsscript", "gas", "googlechat", "googlecloud", "googleworkspace"]
-published: false
+published: true
 ---
 
 毎週月曜の朝に動く Apps Script を書きました。2 週間後に自分が担当する予定をカレンダーから拾い、それが Google Chat の特定のスペースに**もう投稿されているか**を照合して、まだのものだけを知らせる、というものです。
@@ -70,31 +70,32 @@ Workspace の管理者は、Google Cloud そのものを組織ごと止められ
 呼んだのはスペース一覧です。
 
 ```javascript
-function probeSpaces() {
-  let pageToken;
-
-  do {
-    const response = Chat.Spaces.list({ pageSize: 1000, pageToken: pageToken });
-
-    (response.spaces || []).forEach(function (space) {
-      console.log(space.name, space.spaceType, space.displayName || '(no name)');
-    });
-
-    pageToken = response.nextPageToken;
-  } while (pageToken);
+function listSpaces() {
+  return pagedApi('the list of Chat spaces', 'spaces', function (pageToken) {
+    return Chat.Spaces.list({ pageSize: 1000, pageToken: pageToken });
+  });
 }
 ```
+
+（`pagedApi()` はページングとリトライをまとめて引き受けている共通処理です。中身は後述します。）
 
 実行ログに、参加しているスペースが 100 件ほど並びました。エラーは出ません。**標準 Cloud プロジェクトは作っていません。作れないままです。** 同じ日に改めてプロジェクト作成を試して、上のエラーが出ることも確認しています。
 
 スペース一覧が読めることと、スペースの**中身**が読めることは別の権限です。そこで続けて `spaces.messages.list` も呼びました。
 
 ```javascript
-const response = Chat.Spaces.Messages.list(spaceName, {
-  filter: 'createTime > "' + since.toISOString() + '"',
-  pageSize: 1000,
-  pageToken: pageToken
-});
+function recentMessages(spaceName) {
+  const since = addDays(new Date(), -CONFIG.LOOKBACK_DAYS);
+
+  return pagedApi('the ' + CONFIG.PREOP_SPACE_DISPLAY_NAME + ' space',
+    'messages', function (pageToken) {
+      return Chat.Spaces.Messages.list(spaceName, {
+        filter: 'createTime > "' + since.toISOString() + '"',
+        pageSize: 1000,
+        pageToken: pageToken
+      });
+    });
+}
 ```
 
 **498 件の投稿が返りました。** こちらも通ります。
@@ -123,7 +124,7 @@ Advanced Service のページの前提条件は、その 2 つを分けずにま
 
 **これは仕様として保証された挙動ではありません。** ドキュメントが要ると書いているものを満たさないまま通っている以上、いつ塞がってもおかしくない。書き込み系（メッセージの投稿など）も試していません。実際に動かして確かめた日の記録として読んでください。
 
-塞がれたときの逃げ道は残してあります。管理者に**管理コンソール → アプリ → その他の Google サービス → Google Cloud Platform をオン**にしてもらい、標準プロジェクトを作って Apps Script に紐付ける、という正規の道筋です。OAuth 同意画面は[免除条件](https://support.google.com/cloud/answer/13464323)の "The app is only used by people in your Google Workspace or Cloud Identity organization. The project must be owned by the organization, and its OAuth Consent Screen must be configured for internal use." に当たるので、審査は要りません。
+塞がれたときの逃げ道は残してあります。前段で管理者が止められると書いた同じ設定を、オンにしてもらえばいい。標準プロジェクトを作って Apps Script に紐付ける、それが正規の道筋です。OAuth 同意画面は[免除条件](https://support.google.com/cloud/answer/13464323)の "The app is only used by people in your Google Workspace or Cloud Identity organization. The project must be owned by the organization, and its OAuth Consent Screen must be configured for internal use." に当たるので、審査は要りません。
 
 ## Advanced Service にはステータスコードが無い
 
@@ -136,12 +137,27 @@ Calendar も Chat も、ときどき 5xx を返します。常時動くものな
 そこで判定を反転させました。
 
 ```javascript
-// not found / permission / unauthorized / invalid のように
-// 恒久的な状態を名指すものだけリトライしない。それ以外は全部する。
-function worthRetrying(err) { /* ... */ }
+function worthRetrying(err) {
+  return !CONFIG.PERMANENT_ERRORS.some(function (pattern) {
+    return pattern.test(messageOf(err));
+  });
+}
+```
+
+```javascript
+PERMANENT_ERRORS: [
+  /not found/i,
+  /permission/i,
+  /forbidden/i,
+  /unauthorized/i,
+  /invalid/i,
+  /has not been used|is disabled/i
+],
 ```
 
 見分けがつかないときに倒す方向を、**「1 秒無駄にする」対「1 週間失う」**で選んだ、ということです。ホワイトリストではなくブラックリストにしたのは、知らないエラーが来たときに再試行される側に落ちてほしいからです。
+
+最後の 1 行は、この記事の主題そのものです。**`is disabled` は「Google Cloud Platform service has been disabled」にも一致します。** 前提条件を満たさない経路の上に乗っている以上、いつか本当に塞がれる日が来るとしたら、そのエラーはリトライで粘るべきものではありません。そのときはすぐに `WARNING:` としてメールに出る側に倒してあります。
 
 ページングにも同じ話があります。`nextPageToken` が返らなくなるまで回す、というのは、**サービスが渡したばかりのトークンを返してくるまでは**正しい。そうなるとループは 6 分の実行時間上限まで走って、理由を何も残さずに死にます。上限ページ数を設け、同じトークンが 2 回来たことも検出して、どちらの場合もメール冒頭に `WARNING:` を残すようにしました。
 
@@ -186,7 +202,7 @@ function preopMessages(caseCount, notes) {
 
 **倒れる向きが要点です。読めなかったときに「提示済み」と出ることは、絶対にありません。** 全症例が判定なしで並び、確認を促される。そこだけを固定するテストを書いてあります。
 
-`caseCount` の分岐が別にあるのも同じ理屈です。**照合するものが無いことと、照合できないことは違う。** 症例が 0 件の週にスペースを読む理由はないので、そこで「確認を飛ばしました」と言うと、無い警告を出すことになります。
+冒頭の `if (!caseCount)` はもう一段細かい区別です。関数のコメントにある通り、**症例が 0 件で読まなかったこと**と、**読もうとして失敗したこと**は別の状態で、前者を「確認を飛ばしました」という警告にしてしまうと、無い問題を報告することになります。
 
 ## まとめ
 
@@ -205,4 +221,4 @@ Apps Script の他の詰まりどころも書いています。
 - [Apps Scriptのウェブアプリでviewportが効かない — HtmlServiceはmetaタグを消している](https://zenn.dev/takagit/articles/gas-webapp-viewport-addmetatag)
 - [Googleカレンダーの「いつ登録したか」を見る画面をApps Scriptで作った](https://zenn.dev/takagit/articles/gcal-entry-log-apps-script)
 
-検証環境: Google Apps Script（V8 ランタイム）、clasp 3.3.0、Google Workspace（Google Cloud Platform は管理者によりオフのまま）。
+検証環境: Google Apps Script（V8 ランタイム）、clasp 3.3.0、Google Workspace（Google Cloud Platform は 2026-09-08 時点で管理者によりオフ。それ以降は未確認）。
