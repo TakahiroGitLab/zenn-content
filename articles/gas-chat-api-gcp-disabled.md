@@ -6,6 +6,13 @@ topics: ["googleappsscript", "gas", "googlechat", "googlecloud", "googleworkspac
 published: false
 ---
 
+<!--
+2026-09-08: 取り下げ。probeSpaces() が既定 Cloud プロジェクトのまま
+Chat.Spaces.list() を成功させたため、本文の中心にある「読めない」が
+成立していない。GCP が有効化されていないことを確認したうえで、
+本文をドキュメントとの食い違いとして書き直すまで published: false。
+-->
+
 毎週月曜の朝に動く Apps Script を書きました。やることは 2 つです。
 
 1. 2 週間後に自分が担当する予定をカレンダーから拾う
