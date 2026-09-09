@@ -41,6 +41,8 @@ Existing titles run 42-62, so that band is the safe place to sit.
 
 ## Articles
 
+Ordered by publication. `BACKLOG.md` holds what is not written yet.
+
 | Slug | Title | State |
 | --- | --- | --- |
 | `gcal-entry-log-apps-script` | Googleカレンダーの「いつ登録したか」を見る画面をApps Scriptで作った | published |
@@ -48,3 +50,7 @@ Existing titles run 42-62, so that band is the safe place to sit.
 | `css-liquid-glass-backdrop-filter` | CSSでliquid glassを作る — backdrop-filterだけでは灰色の板にしかならない | published |
 | `apple-calendar-entry-log-eventkit` | Apple Calendarの「いつ登録したか」を見るMacアプリをEventKitで作った | published |
 | `swiftui-app-without-xcode` | XcodeなしでSwiftUIのMacアプリを作る — .appは手で組めるが、ad-hoc署名だけは省略できない | published |
+| `claude-cli-llm-provider` | APIキーなしで個人ツールにAIを足す — claude CLIは楽だが、無視された引数が静かに嘘をつく | published |
+| `launchagent-claude-cli-keychain` | 常駐させたclaude CLIがNot logged inになる — PATHを直しても直らない理由はKeychainにある | published |
+| `gas-chat-api-gcp-disabled` | Apps ScriptのChatは既定Cloudプロジェクトのまま読めた — ドキュメントは標準が要ると書いている | published |
+| `gmail-plain-text-proportional-font` | 空白で桁を揃えたメールは崩れる — Gmailはプレーンテキストを等幅で表示しない | **draft** |
