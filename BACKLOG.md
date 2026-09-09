@@ -199,6 +199,48 @@ Google が長尾クエリで順位をつけるのに数週間〜数か月かか�
 
 ---
 
+## Claude Code on the Web から着手できるか
+
+2026-09-10 に各リポジトリの状態と[公式ドキュメント](https://code.claude.com/docs/en/claude-code-on-the-web)を確認した結果。
+
+**この repo の作業（執筆・推敲・公開）は完全に引き継げる。** 記事も `README.md` も
+`VERIFICATION.md` もこのファイルも GitHub にあるため。
+
+題材のソースは別リポジトリにあるので、そこが分かれる。ドキュメントに
+"a cloud session can access any repository the connecting GitHub account can see"
+とあるので、**同じ GitHub アカウントから見えるリポジトリは clone できる**
+（環境のネットワーク設定が許す範囲で）。
+
+| 候補 | ソース | Web から |
+| --- | --- | --- |
+| 1〜5 | `ForecastMeta`（GitHub, private） | **可** |
+| 7〜8 | `gchat-preop-reminder`（GitHub, private） | **可** |
+| 9 | `te-imp-order-check`（git だがリモート無し） | **不可**（下記） |
+| 6 ★ | `BurnDepth`（**git 未初期化**） | **不可**（下記） |
+| 10 | `7mac`（**git 未初期化**） | **不可**（下記） |
+
+### 届かないものを届かせるには
+
+`claude --cloud` はリモートの無いリポジトリを**バンドルしてアップロードする**フォールバックを
+持つが、条件が `The directory must be a git repository with at least one commit` なので、
+**git 未初期化の `BurnDepth` と `7mac` はバンドルもできない。** また untracked なファイルは
+バンドルに含まれない。
+
+`te-imp-order-check` は git リポジトリなのでそのディレクトリから `claude --cloud` すれば
+バンドルできるが、**`zenn-content` で開いた Web セッションからは見えない。**
+
+いずれも、**private リポジトリを作って push すれば解決する。**
+特に候補 6（BurnDepth）は提案時の一番の推しなので、着手前にこれが要る。
+
+### Web では使えないもの
+
+- **`clasp`** — ローカルの `~/.clasprc.json` で認証しているため。
+  `gchat-preop-reminder` の記事で、デプロイ済みの Apps Script と引用コードを
+  突き合わせるのに使った。Web ではこの検証ができない。
+- **`ListAgents` / `SendMessage`** — 相手はこのマシンのローカルセッションなので届かない。
+
+`curl` での Zenn の公開状態確認（403/404/200）は Web でも可能。
+
 ## 他セッションとの分担
 
 | プロジェクト | 開発を持つセッション（2026-09-10 の `ListAgents` 実測） |
