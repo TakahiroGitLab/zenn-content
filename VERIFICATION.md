@@ -201,3 +201,30 @@ Cloud プロジェクトが要り、管理者が GCP を止めているので読
   no additional cost." としつつ、上限超過分の課金を 2026 年後半に予定と書いている。
 - 「OAuth 同意画面を内部にすれば審査不要」— 条件が不足。免除条件は
   "The project must be owned by the organization" も含む。書き直しでこの節ごと不要になった。
+
+---
+
+## gmail-plain-text-proportional-font
+
+環境: Google Apps Script（V8）、Gmail ウェブ版、2026-09-09。
+
+現象そのものは著者が実際に踏んだもの。記事の主眼は「送る側の設計」なので、
+コードはすべて gchat-preop-reminder の現行実装から引いた。
+
+| 主張 | 方法 | 結果 |
+| --- | --- | --- |
+| `text/plain` はフォントを規定しない | `curl https://www.rfc-editor.org/rfc/rfc2646.txt` で原文確認 | 2章 "Text/Plain is usually displayed as preformatted text, often in a fixed font."／3.1章 "Many modern programs use a proportional-spaced font and CRLF to represent paragraph breaks." いずれも逐語 |
+| 古くから知られた話である | 2007年の記事と現行のブラウザ拡張が存在 | `dannyman.toldme.com/2007/03/08/gmail-fixed-width/` と `github.com/jparise/gmail-fixed-font` いずれも 200 |
+| `body` と `htmlBody` の併送で multipart になる | MailApp リファレンス | htmlBody: "if set, devices capable of rendering HTML will use it instead of the required body argument" |
+| 引用したコードが現行実装と一致 | `gchat-preop-reminder/src/Reminder.js` `Html.js` を直接参照 | `caseLine()` `eventLine()` `spanLabel()` の `endLabel` 分岐、`HTML_TIME` / `HTML_MARK` の定義と原文コメント、いずれも一致 |
+| HTML 側で時刻と `*` を別カラムにした理由 | `Html.js` のコメント | "Put the star in with the time and a starred row's title begins a few pixels right of an unstarred one, which is the misalignment HTML was meant to remove." |
+| `padRight` が残っている | `Reminder.js:386, 428` | 残存を確認。記事も「依存していない」とだけ書き、削除したとは書いていない |
+
+### 未検証
+- **Gmail が実際にプロポーショナルで描画すること自体を、こちらで再現テストしていない。**
+  著者の実体験と、RFC・2007年の記事・現行の拡張機能という傍証に依っている。
+  スクリーンショットによる比較は残していない。
+- **他のメールクライアントの挙動。** 記事は Gmail についてのみ書いており、
+  Outlook や Apple Mail がどう描くかには触れていない。
+- **崩れ方の程度。** 「必ず崩れる」と書いたが、何ピクセルずれるかは測っていない。
+  根拠は「空白の幅が他の字と異なる」という比例フォントの定義そのもの。
