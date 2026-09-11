@@ -250,3 +250,33 @@ Cloud プロジェクトが要り、管理者が GCP を止めているので読
   Outlook や Apple Mail がどう描くかには触れていない。
 - **崩れ方の程度。** 「必ず崩れる」と書いたが、何ピクセルずれるかは測っていない。
   根拠は「空白の幅が他の字と異なる」という比例フォントの定義そのもの。
+
+---
+
+## swift-mainactor-reentrancy-generation
+
+環境: Swift 6.3.3（swiftlang-6.3.3.1.3）、macOS 26、arm64。
+題材は `apple-cal-entry-log` のコミット `9b2532c`「Let the newest read be the one that wins」。
+
+| 主張 | 方法 | 結果 |
+| --- | --- | --- |
+| actor は中断点で interleave する | SE-0306 原文 | "When an actor-isolated function suspends, reentrancy allows other work to execute on the actor before the original actor-isolated function resumes, which we refer to as _interleaving_." |
+| 同時実行はしないが順序は保証しない | 同 | "Interleaving executions still respect the actor's \"single-threaded illusion\", i.e., no two functions will ever execute _concurrently_ on any given actor. However they may _interleave_ at suspension points." |
+| 中断点ごとに不変条件の確認が要る | 同 | "every suspension point must be carefully inspected if the code _after_ it depends on some invariants that could have changed before it suspended" |
+| `.task(id:)` は id 変更で cancel & restart | Apple ドキュメント（`view/task(id:priority:_:)`） | "it also cancels and recreates the task when a specified value changes" |
+| 読み込みの経路が3つある | `EntryListView.swift:22,31,58` を直接参照 | `.task(id: model.fetchKey)` / 通知の `for await` → `reloadSoon()` / ボタンの `Task { await model.reload() }` |
+| `pending` は通知だけを直列化していた | `EntryLogModel.swift` の `reloadSoon()` | `pending?.cancel()` は前の `pending` のみを対象にする |
+| 世代番号の実装 | `EntryLogModel.swift` の `reload()` | `generation += 1` / `let mine = generation` / 各 `await` 後に `guard mine == generation` |
+| `calendars` を途中で代入している | 同 | 本体の読み込み前に `calendars = offered`。ガードは通したうえで最後まで持ち越していない |
+| Swift のバージョン | `swift --version` | `Apple Swift version 6.3.3 (swiftlang-6.3.3.1.3 clang-2100.1.1.101)` / `Target: arm64-apple-macosx26.0` |
+
+### 書いてから削った記述
+- **`catch` 節が `guard` でなく `if` である理由を「意図がある」として1節書いたが、削除した。**
+  コードにコメントは無く、`9b2532c` のコミットメッセージでも触れられていない。**著者の意図を
+  こちらが推測して書いていた**ため、根拠のない記述として落とした。
+
+### 未検証
+- **バグの再現そのもの。** 3経路が競合して古い結果が勝つ瞬間を、こちらで再現させてはいない。
+  根拠は実装とコミットメッセージ、および SE-0306 が記述する再入可能性の機構。
+- **`@Observable` との相互作用。** 記事は actor の再入可能性だけを扱っており、
+  `@Observable` の変更通知がこの競合にどう影響するかには踏み込んでいない。

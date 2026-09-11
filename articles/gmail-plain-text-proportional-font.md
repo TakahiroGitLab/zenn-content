@@ -3,7 +3,7 @@ title: "空白で桁を揃えたメールは崩れる — Gmailはプレーン�
 emoji: "📐"
 type: "tech"
 topics: ["gmail", "googleappsscript", "gas", "email", "html"]
-published: false
+published: true
 ---
 
 毎週月曜の朝、自分のカレンダーの1週間ぶんをメールで送る Apps Script を書きました。時刻と予定名を並べただけの、素朴なテキストです。
