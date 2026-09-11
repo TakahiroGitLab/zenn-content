@@ -3,7 +3,7 @@ title: "@MainActorなのに古い結果が新しい結果を上書きする — 
 emoji: "🔀"
 type: "tech"
 topics: ["swift", "swiftui", "concurrency", "macos", "eventkit"]
-published: false
+published: true
 ---
 
 カレンダーの予定を「いつ登録したか」で一覧する Mac アプリを作っています。日付の範囲を選ぶと、その範囲を読み直して表示します。

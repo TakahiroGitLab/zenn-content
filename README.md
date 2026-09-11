@@ -53,4 +53,5 @@ Ordered by publication. `BACKLOG.md` holds what is not written yet.
 | `claude-cli-llm-provider` | APIキーなしで個人ツールにAIを足す — claude CLIは楽だが、無視された引数が静かに嘘をつく | published |
 | `launchagent-claude-cli-keychain` | 常駐させたclaude CLIがNot logged inになる — PATHを直しても直らない理由はKeychainにある | published |
 | `gas-chat-api-gcp-disabled` | Apps ScriptのChatは既定Cloudプロジェクトのまま読めた — ドキュメントは標準が要ると書いている | published |
-| `gmail-plain-text-proportional-font` | 空白で桁を揃えたメールは崩れる — Gmailはプレーンテキストを等幅で表示しない | **draft** |
+| `gmail-plain-text-proportional-font` | 空白で桁を揃えたメールは崩れる — Gmailはプレーンテキストを等幅で表示しない | published |
+| `swift-mainactor-reentrancy-generation` | @MainActorなのに古い結果が新しい結果を上書きする — actorはawaitで割り込まれる | published |
