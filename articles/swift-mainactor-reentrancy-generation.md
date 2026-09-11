@@ -100,6 +100,52 @@ Swift のアクターを定義した [SE-0306](https://github.com/swiftlang/swif
 
 「メインアクターにいるから安全」は正しく、そして**問題の半分しか見ていませんでした。**
 
+## 30行で再現する
+
+アプリを持ち出さなくても、これだけで起きます。`swift repro.swift` で走ります。
+
+```swift
+import Foundation
+
+@MainActor
+final class Model {
+    var value = "(まだ何も読んでいない)"
+
+    func read(_ label: String, delay: Duration) async {
+        try? await Task.sleep(for: delay)
+        print("  [\(label)] 再開。Task.isCancelled = \(Task.isCancelled)")
+        value = label
+    }
+}
+
+@MainActor
+func run() async {
+    let m = Model()
+
+    // 遅い読み込みを先に、速い読み込みを後から始める
+    async let slow: Void = m.read("遅い読み込み・古い範囲", delay: .milliseconds(300))
+    async let fast: Void = m.read("速い読み込み・新しい範囲", delay: .milliseconds(50))
+
+    _ = await (slow, fast)
+
+    print("最終的な表示: \(m.value)")
+}
+
+await run()
+```
+
+出力です。
+
+```
+  [速い読み込み・新しい範囲] 再開。Task.isCancelled = false
+  [遅い読み込み・古い範囲] 再開。Task.isCancelled = false
+最終的な表示: 遅い読み込み・古い範囲
+```
+
+`@MainActor` が付いていて、`Model` の外から触っているものは何もなくて、それでも**後から始めた新しい読み込みの結果が、先に始めた古い読み込みに上書きされます。**
+
+そして**両方の `Task.isCancelled` が `false`** であることも、ここで見えています。次の節の話です。
+
 ## キャンセルでは直らない
 
 最初に思いつくのはキャンセルです。新しい読み込みが始まったら古いほうを止めればいい。
@@ -112,7 +158,31 @@ Swift のアクターを定義した [SE-0306](https://github.com/swiftlang/swif
 - ボタンの `Task { }` は非構造化タスクで、誰の子でもない
 - `pending` がキャンセルするのは、前の `pending` だけ
 
-ボタンを押した読み込みは、範囲変更の読み込みを止めません。**その逆も同じです。** だから両方の `Task.isCancelled` が `false` のまま、2つとも最後まで走りきります。
+ボタンを押した読み込みは、範囲変更の読み込みを止めません。**その逆も同じです。** だから両方の `Task.isCancelled` が `false` のまま、2つとも最後まで走りきります。先ほどの再現コードの出力が、まさにそれでした。
+
+「非構造化タスクは誰の子でもない」も、そのまま確かめられます。
+
+```swift
+let parent = Task {
+    Task {                                  // 中で作った非構造化タスク
+        try? await Task.sleep(for: .milliseconds(200))
+        print("  中で作った Task { }: Task.isCancelled = \(Task.isCancelled)")
+    }
+
+    try? await Task.sleep(for: .milliseconds(500))
+    print("  親タスク: Task.isCancelled = \(Task.isCancelled)")
+}
+
+try? await Task.sleep(for: .milliseconds(50))
+parent.cancel()
+```
+
+```
+  親タスク: Task.isCancelled = true
+  中で作った Task { }: Task.isCancelled = false
+```
+
+**親をキャンセルしても、中で作った `Task { }` には届きません。**
 
 `Task.isCancelled` のチェックは書いてありました。役に立っていなかっただけです。
 
@@ -163,6 +233,16 @@ func reload() async {
 ```
 
 入口で `generation` を増やして、自分の番号を `mine` に控える。**新しい読み込みが始まれば `generation` だけが進むので、`mine == generation` が偽になった時点で自分は用済み**だと分かります。
+
+先ほどの再現コードに世代番号を足すと、こうなります。
+
+```
+  [速い読み込み・新しい範囲] 最新なので反映 (mine=2)
+  [遅い読み込み・古い範囲] 追い越されたので結果を破棄 (mine=1, generation=2)
+最終的な表示: 速い読み込み・新しい範囲
+```
+
+遅いほうは再開して、自分の番号が古いことに気づいて、**何も書かずに戻ります。**
 
 `generation` の読み書きはどちらもメインアクター上なので、ここにロックは要りません。**アクターが保証してくれるのは、まさにこの部分です。** 足りなかったのは、アクターが保証しない側だけでした。
 
