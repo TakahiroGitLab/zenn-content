@@ -300,7 +300,7 @@ Cloud プロジェクトが要り、管理者が GCP を止めているので読
 
 ## launchd-startcalendarinterval-catchup
 
-環境: macOS 26.5.2（Darwin 25.6.0、FileVault On）、uid 501、2026-09-13。
+環境: macOS 26.6.2（ビルド 25G83、Darwin 25.6.0、FileVault On）、uid 501、2026-09-13。
 きっかけは「毎日 git pull を自動化したい」に対する外部の cron vs launchd 比較表。
 **比較表そのものは既出が多すぎるので書かず、man と実測で通らなかった記述だけを扱った。**
 
@@ -309,19 +309,44 @@ Cloud プロジェクトが要り、管理者が GCP を止めているので読
 | `StartCalendarInterval` はスリープで逃した回を実行する | `man launchd.plist` | "Unlike cron which skips job invocations when the computer is asleep, launchd will start the job the next time the computer wakes up." |
 | 逃した回は合流して1回になる | 同 | "those events will be coalesced into one event upon wake from sleep" |
 | `StartInterval` は追いつかない | 同 | "that interval will be missed due to shortcomings in kqueue(3)" |
-| ジョブに発火時刻は渡らない | `RunAtLoad` のジョブで `argv` と `env` を全ダンプ | `argv` は `ProgramArguments` のみ。env は12個（＋`env` 自身が付ける `_`）。予定時刻も合流回数も無し |
-| 過去の時刻で bootstrap しても発火しない | 16:12 に `Hour 0 / Minute 1` を `launchctl bootstrap gui/501` | `state = not running` / `runs = 0` / `last exit code = (never exited)` |
-| 暦発火を見張っているのは GUI セッション | `launchctl print gui/501/<label>` | `stream = com.apple.launchd.calendarinterval` / **`monitor = com.apple.UserEventAgent-Aqua`** |
-| ドメインの差は uid ではなく asid | `launchctl print gui/501` と `launchctl print system` | `type = login / uid = 501 / asid = 100015` vs `type = system / uid unset / asid = 0` |
+| `StartInterval` は `StartCalendarInterval` の直上にある（本文「すぐ上にある」の根拠） | man の行番号 | `StartInterval` 348行 / `StartCalendarInterval` 355行 |
+| ジョブに発火時刻は渡らない | `RunAtLoad` で `/bin/echo` と `/usr/bin/env` を**シェルを挟まず直接 exec** | argv は `ProgramArguments` そのまま。環境変数は10個（`HOME` `LOGNAME` `OSLogRateLimit` `PATH` `SHELL` `SSH_AUTH_SOCK` `TMPDIR` `USER` `XPC_FLAGS` `XPC_SERVICE_NAME`）。予定時刻も合流回数も無し |
+| 過去の時刻で bootstrap しても発火しない | 16:42 に `Hour 0 / Minute 1` を `launchctl bootstrap gui/501` | `state = not running` / `runs = 0` / `last exit code = (never exited)` |
+| 暦発火を見張っているのは GUI セッション | `launchctl print` の `com.apple.launchd.calendarinterval` ブロック | `monitor = com.apple.UserEventAgent-Aqua` |
+| セッション種別を変えても監視者は Aqua | `LimitLoadToSessionType` を 指定なし / `Aqua` / `Background` で比較 | 指定なし・`Aqua` とも Aqua。`Background` は `gui/501` に入らず `Bootstrap failed: 5: Input/output error`、`user/501` に入れれば通り、**そこでも monitor は Aqua** |
+| 既定の Aqua は GUI ログイン後にしかロードされない | `man launchctl` | "Background agents may be loaded independently of a GUI login. Aqua agents are loaded only when a user has logged in at the GUI." |
+| ドメインの差は uid ではなく asid | `launchctl print` を gui/user/system で比較 | `gui/501` = login/501/**100015**、`user/501` = user/501/**100042**、`system` = system/uid unset/**0** |
+| asid の定義 | `man launchctl` | "A user-login domain is created when the user logs in at the GUI and is identified by the audit session identifier associated with that login." |
 | `UserName` は system ドメイン専用で agent では無視 | `man launchd.plist` | "This key is only applicable for services that are loaded into the privileged system domain." / "Note that for agents, the UserName key is ignored." |
-| cron は非推奨と書かれていない | `man crontab` の Darwin note | "Although cron(8) and crontab(5) are **officially supported** under Darwin, their functionality has been absorbed into launchd(8)" |
-| man に deprecated の語は無い | `man launchd.plist` 全文を `grep -i deprecat` | 0件。cron への言及は2箇所でどちらも非推奨の話ではない |
+| cron は非推奨と書かれていない | `man crontab` の Darwin note | "Although cron(8) and crontab(5) are **officially supported** under Darwin..." |
+| man に deprecated の語は無い | `man launchd.plist` を `grep -ic deprecat` | **0件**。cron への言及は359行と363行の**2箇所だけ**で、どちらも非推奨の話ではない |
 | `WatchPaths` は Apple 自身が非推奨 | `man launchd.plist` | "IMPORTANT: Use of this key is highly discouraged, as filesystem event monitoring is highly race-prone..." |
-| 既定 PATH は空ではなく定数 | ジョブの実測値と `paths.h` を突き合わせ | 実測 `/usr/bin:/bin:/usr/sbin:/sbin` = `paths.h:67` の `#define _PATH_STDPATH`。man も同名で参照 |
-| **記事に載せたスクリプトが、記事に載せた出力を生成する** | 記事本文から ```sh フェンスを機械的に抜き出して実行し、`console` フェンス4つと機械照合 | 全ブロック一致。差は行末スペース3箇所のみ（`argv: /bin/sh ` と asid 2行）で、記事側では落としてある |
+| 既定 PATH は空ではなく定数と一致 | ジョブの実測値と `paths.h` を突き合わせ | 実測 `/usr/bin:/bin:/usr/sbin:/sbin` = `paths.h:67` の `#define _PATH_STDPATH` |
+| **記事に載せたスクリプトが、記事に載せた出力を生成する** | 本文の ```sh フェンスを機械的に抜き出して実行し、`console` フェンス4つと機械照合 | **4ブロックとも一致**（時刻のみ正規化） |
+| **引用が逐語である** | 本文の `> ` 行10本を man 3種の全文と機械照合 | **10本とも一致**し、出典の対応も一致 |
 
-検証用に作った LaunchAgent（`probe.calendar` / `test.sched.probe` / `test.env.probe`）は
-すべて `launchctl bootout` 済み。`launchctl list` に残っていないことを確認した。
+検証用に作った LaunchAgent（`probe.env` / `probe.argv` / `probe.cal` / `probe.aqua` / `probe.bg` ほか）は
+すべて `bootout` 済み。`launchctl list` に残っていないことを確認した。
+
+### 公開前レビューで直したもの
+- **本文「16:10 に」と出力「現在 16:12:46」が食い違っていた。** 出力ブロックを差し替えた際に本文を直し忘れた。
+- **環境変数の数を誤っていた。** 初稿は `/bin/sh -c` 経由で測っており、`PWD` `SHLVL` `_` という
+  **シェルが足す変数を launchd が渡したものとして数えていた**（「13個」と記述）。
+  `/usr/bin/env` を直接 exec する形に測り直し、10個に訂正。
+- **`_PATH_STDPATH` の含意が過剰だった。** man の当該記述は `ProgramArguments` の相対パス解決の話で、
+  「ジョブに渡す `PATH` の既定値」とは書いていない。**測った値が定数と一致した**という言い方に直した。
+- **「LaunchAgent は GUI ログインが要る」が言い過ぎだった。** `man launchctl` に
+  "Background agents may be loaded independently of a GUI login" とあり、既定の `Aqua` 限定の話だった。
+  セッション種別3通りの実測を足したうえで、既定に限定した表現に直した。
+- **`monitor = com.apple.UserEventAgent-**Aqua**`** とコード中に太字記法を書いており、
+  バッククォート内なのでアスタリスクがそのまま表示される状態だった。
+- **出力ブロックが実際の出力と3箇所ずれていた**（`head -8` の末尾2行を削除、`_=/usr/bin/env` の欠落、余分な空行）。
+- **`### N` の番号が本文の「測定 N」と対応していなかった**（本文 測定1=スクリプト ###3 など）。
+  スクリプトを本文の節順に組み直して一致させた。
+- **検証環境の macOS バージョンが誤っていた。** 他記事から 26.5.2 を引き継いでいたが、
+  `sw_vers` で確認すると **26.6.2（25G83）**。実地確認に差し替えた。
+- **man の出典表記に `man launchctl` が抜けていた。** 引用2本の出典が漏れていた。
+- まとめの「GUI ログインが前提条件」「daemon と agent を分けているのは」も、本文の訂正に合わせた。
 
 ### 書かなかったこと
 - **LaunchDaemon 側から Keychain が読めない件。** 前作 `launchagent-claude-cli-keychain` の
@@ -329,10 +354,12 @@ Cloud プロジェクトが要り、管理者が GCP を止めているので読
   **再現用の plist と一括スクリプトまで用意したが、実行しない判断になったので記事から外した。**
   2026-07-31 に WineNotes / RestaurantRating で踏んだ記憶はあるが、**エラー文字列が残っていない**
   ため、今回の記事では主張として立てていない。asid の事実だけを述べ、因果は前作にリンクで譲った。
-- **`system` ドメインの暦発火を誰が見張るか。** 同じく `sudo` が要るため未測定。
-  記事には「このスクリプトが観察しているのは LaunchAgent の場合」と射程を明記した。
 - **スリープの追いつきと合流そのもの。** `pmset schedule wake` + `sleepnow` で測れるが、
-  実際に Mac を眠らせる必要があるため実施せず。**man の引用に留めてあり、実測とは書いていない。**
+  実際に Mac を眠らせる必要があるため実施せず。**man の引用に留め、本文にも
+  「これは引用であって、スリープさせて測ったわけではありません」と明記した。**
+- **GUI ログインしていない状態での暦発火。** ログアウトが必要なため未測定。
+  本文に「ログイン中に観察するかぎり」と射程を明記した。
+- **`system` ドメインの暦発火を誰が見張るか。** `sudo` が要るため未測定。本文に明記。
 - `/usr/sbin/cron` のフルディスクアクセス（TCC）要否。比較表は要ると書いていたが未検証なので触れていない。
 - `EVFILT_VNODE` による `WatchPaths` の実装詳細。比較表は断定していたが man の裏付けが無いので書いていない。
 - cron が実際にロードされているか。`launchctl print system/com.vix.cron` に `sudo` が要る。
