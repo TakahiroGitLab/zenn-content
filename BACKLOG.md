@@ -3,7 +3,7 @@
 `README.md` が公開済みの一覧、`VERIFICATION.md` が各記事の検証記録。
 このファイルは**まだ書いていないもの**と、**書く手順で踏んだ落とし穴**を持つ。
 
-最終更新 2026-09-11（候補11を追加、候補12を執筆）。
+最終更新 2026-09-13（候補13・14を追加。候補12は `swift-mainactor-reentrancy-generation` として公開済み）。
 
 ---
 
@@ -158,6 +158,63 @@ Apple Calendar の登録日時を見る Mac アプリ。2026-09-10 に8コミッ
     2秒後のサイズ比較で見送る、共有が未マウントならローカルに作らず何もしない、
     同名衝突は上書きも黙殺もせず連番。他より短くまとまる。
 
+### macOS のスケジューラ（プロジェクト横断・`~/Library/LaunchAgents/`）
+
+きっかけは「特定のフォルダで毎日 git pull を自動化したい」に対する外部の回答文
+（cron vs launchd の比較表）。**その比較表自体は既出が多すぎて記事にならない**が、
+手元の man と突き合わせたら2箇所が事実と違った。2026-09-13 に Darwin 25.6.0 で確認。
+
+13. **「launchd はスリープに強い」は半分だけ正しい**
+    `man launchd.plist` から verbatim。`StartCalendarInterval` は
+    "Unlike cron which skips job invocations when the computer is asleep, launchd will
+    start the job the next time the computer wakes up. If multiple intervals transpire
+    before the computer is woken, those events **will be coalesced into one event**
+    upon wake from sleep."
+    一方 `StartInterval` は
+    "If the system is asleep during the time of the next scheduled interval firing,
+    **that interval will be missed** due to shortcomings in kqueue(3)."
+    つまり追いつくのは `StartCalendarInterval` だけで、launchd 全体の性質ではない。
+    既出の比較表はここを混ぜて「launchd は堅牢」と書いている。
+    coalesce も効く — 3日閉じていた Mac は起動時に3回ではなく**1回**しか走らない。
+    毎日 pull の設計に直接効く。
+
+    同じ回に見つけた、比較表の2つの誤り（記事に混ぜられる）:
+    - **「cron は Apple が非推奨」は man に書いていない。** `man crontab` の Darwin note は
+      "Although cron(8) and crontab(5) are **officially supported** under Darwin, their
+      functionality has been absorbed into launchd(8)" で、deprecated の語は無い。
+      `man launchd.plist` 全文を grep しても `deprecat` は0件、cron への言及は2箇所だけで
+      どちらも非推奨の話ではない。
+    - **WatchPaths の「ディレクトリなら作成/削除のみ検知」も man に書いていない。**
+      現在の man の WatchPaths 項は
+      "**IMPORTANT: Use of this key is highly discouraged**, as filesystem event monitoring
+      is highly race-prone, and it is entirely possible for modifications to be missed."
+      が全て。ファイル/ディレクトリの区別は無く、しかも評価が逆で、比較表が長所として
+      挙げているキーを Apple は使うなと書いている。kqueue への man の言及は WatchPaths
+      ではなく `StartInterval` の項で、しかも欠点として出てくる。
+
+    未検証: `/usr/sbin/cron` のフルディスクアクセス要否（TCC は手元で確認できず）、
+    kqueue/EVFILT_VNODE の実装詳細（man の裏付け無し）、cron が実際にロードされているか
+    （`sudo` が要るため未確認。`/System/Library/LaunchDaemons/com.vix.cron.plist` の存在のみ確認）。
+
+14. ★ **LaunchDaemon では `claude` CLI が Keychain を読めない**
+    cron か launchd かを決めた**後**に詰まるところ。`claude -p` を呼ぶ常駐サービスは
+    LaunchDaemon（`/Library/LaunchDaemons`、`system` ドメイン）ではなく
+    LaunchAgent（`~/Library/LaunchAgents`、`gui/<uid>` ドメイン）で登録しないと動かない。
+    失敗が2段構えなのが記事になる:
+    1. **PATH** — ログインシェルの PATH を継承しないので `~/.local/bin/claude` が見つからない。
+       `EnvironmentVariables` で明示すれば直る。ここで直ったと思うのが罠。
+    2. **Keychain** — OAuth トークンはユーザーのログインキーチェーンにあり、これは
+       GUI セキュリティセッション（Aqua/loginwindow）の中でしか読めない。LaunchDaemon は
+       `UserName` を正しいユーザーにしても**セッションの外**で走るので、PATH がどれだけ
+       正しくても "Not logged in" で落ちる。
+    つまり「PATH を直したのにまだ動かない」が起きる。1段目だけ直して詰まる人向けの記事。
+    代償は、FileVault のこの Mac mini では LaunchAgent はユーザーが GUI ログインするまで
+    起動しない（完全ヘッドレス自動起動にはならない）こと。トレードオフも書ける。
+    2026-07-31 に WineNotes / RestaurantRating で実際に踏んで解決済み。
+    動いている plist が `~/Library/LaunchAgents/com.taka.winenotes-webapp.plist` にあり、
+    `EnvironmentVariables` → `PATH` の実例として引用できる。詳細は `~/.claude/CLAUDE.md`。
+    **13 より独自性が高い**（13 は訂正、14 は体験）。推す順は 14 → 13。
+
 ---
 
 ## 見送った候補
@@ -165,6 +222,10 @@ Apple Calendar の登録日時を見る Mac アプリ。2026-09-10 に8コミッ
 - **Gmail のプレーンテキスト表示を受信側で等幅に戻す話** — 現象自体は2007年から
   知られていて既出が多い。**送る側の設計**に切り口を変えて `gmail-plain-text-proportional-font`
   として書いた。同じ轍を踏まないよう、提案前に必ず検索して既出量を確かめること。
+
+- **cron vs launchd の比較表そのもの** — macOS でこの比較は既出が山ほどある。
+  11本目の比較表は書かない。拾えるのは既出が間違えている箇所（候補13）と、
+  比較の先で詰まる話（候補14）だけ。
 
 ---
 
