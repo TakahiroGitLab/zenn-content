@@ -55,3 +55,4 @@ Ordered by publication. `BACKLOG.md` holds what is not written yet.
 | `gas-chat-api-gcp-disabled` | Apps ScriptのChatは既定Cloudプロジェクトのまま読めた — ドキュメントは標準が要ると書いている | published |
 | `gmail-plain-text-proportional-font` | 空白で桁を揃えたメールは崩れる — Gmailはプレーンテキストを等幅で表示しない | published |
 | `swift-mainactor-reentrancy-generation` | @MainActorなのに古い結果が新しい結果を上書きする — actorはawaitで割り込まれる | published |
+| `launchd-startcalendarinterval-catchup` | 「launchdはスリープに強い」は半分だけ正しい — 追いつくのはStartCalendarIntervalだけ | **draft** |

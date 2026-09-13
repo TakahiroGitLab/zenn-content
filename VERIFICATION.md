@@ -297,3 +297,48 @@ Cloud プロジェクトが要り、管理者が GCP を止めているので読
   実装とコミットメッセージ、および上記の最小再現が根拠。
 - **`@Observable` との相互作用。** 記事は actor の再入可能性だけを扱っており、
   `@Observable` の変更通知がこの競合にどう影響するかには踏み込んでいない。
+
+## launchd-startcalendarinterval-catchup
+
+環境: macOS 26.5.2（Darwin 25.6.0、FileVault On）、uid 501、2026-09-13。
+きっかけは「毎日 git pull を自動化したい」に対する外部の cron vs launchd 比較表。
+**比較表そのものは既出が多すぎるので書かず、man と実測で通らなかった記述だけを扱った。**
+
+| 主張 | 方法 | 結果 |
+| --- | --- | --- |
+| `StartCalendarInterval` はスリープで逃した回を実行する | `man launchd.plist` | "Unlike cron which skips job invocations when the computer is asleep, launchd will start the job the next time the computer wakes up." |
+| 逃した回は合流して1回になる | 同 | "those events will be coalesced into one event upon wake from sleep" |
+| `StartInterval` は追いつかない | 同 | "that interval will be missed due to shortcomings in kqueue(3)" |
+| ジョブに発火時刻は渡らない | `RunAtLoad` のジョブで `argv` と `env` を全ダンプ | `argv` は `ProgramArguments` のみ。env は12個（＋`env` 自身が付ける `_`）。予定時刻も合流回数も無し |
+| 過去の時刻で bootstrap しても発火しない | 16:12 に `Hour 0 / Minute 1` を `launchctl bootstrap gui/501` | `state = not running` / `runs = 0` / `last exit code = (never exited)` |
+| 暦発火を見張っているのは GUI セッション | `launchctl print gui/501/<label>` | `stream = com.apple.launchd.calendarinterval` / **`monitor = com.apple.UserEventAgent-Aqua`** |
+| ドメインの差は uid ではなく asid | `launchctl print gui/501` と `launchctl print system` | `type = login / uid = 501 / asid = 100015` vs `type = system / uid unset / asid = 0` |
+| `UserName` は system ドメイン専用で agent では無視 | `man launchd.plist` | "This key is only applicable for services that are loaded into the privileged system domain." / "Note that for agents, the UserName key is ignored." |
+| cron は非推奨と書かれていない | `man crontab` の Darwin note | "Although cron(8) and crontab(5) are **officially supported** under Darwin, their functionality has been absorbed into launchd(8)" |
+| man に deprecated の語は無い | `man launchd.plist` 全文を `grep -i deprecat` | 0件。cron への言及は2箇所でどちらも非推奨の話ではない |
+| `WatchPaths` は Apple 自身が非推奨 | `man launchd.plist` | "IMPORTANT: Use of this key is highly discouraged, as filesystem event monitoring is highly race-prone..." |
+| 既定 PATH は空ではなく定数 | ジョブの実測値と `paths.h` を突き合わせ | 実測 `/usr/bin:/bin:/usr/sbin:/sbin` = `paths.h:67` の `#define _PATH_STDPATH`。man も同名で参照 |
+| **記事に載せたスクリプトが、記事に載せた出力を生成する** | 記事本文から ```sh フェンスを機械的に抜き出して実行し、`console` フェンス4つと機械照合 | 全ブロック一致。差は行末スペース3箇所のみ（`argv: /bin/sh ` と asid 2行）で、記事側では落としてある |
+
+検証用に作った LaunchAgent（`probe.calendar` / `test.sched.probe` / `test.env.probe`）は
+すべて `launchctl bootout` 済み。`launchctl list` に残っていないことを確認した。
+
+### 書かなかったこと
+- **LaunchDaemon 側から Keychain が読めない件。** 前作 `launchagent-claude-cli-keychain` の
+  主題であり、今回も未検証のまま（`/Library/LaunchDaemons` への設置に `sudo` が要る）。
+  **再現用の plist と一括スクリプトまで用意したが、実行しない判断になったので記事から外した。**
+  2026-07-31 に WineNotes / RestaurantRating で踏んだ記憶はあるが、**エラー文字列が残っていない**
+  ため、今回の記事では主張として立てていない。asid の事実だけを述べ、因果は前作にリンクで譲った。
+- **`system` ドメインの暦発火を誰が見張るか。** 同じく `sudo` が要るため未測定。
+  記事には「このスクリプトが観察しているのは LaunchAgent の場合」と射程を明記した。
+- **スリープの追いつきと合流そのもの。** `pmset schedule wake` + `sleepnow` で測れるが、
+  実際に Mac を眠らせる必要があるため実施せず。**man の引用に留めてあり、実測とは書いていない。**
+- `/usr/sbin/cron` のフルディスクアクセス（TCC）要否。比較表は要ると書いていたが未検証なので触れていない。
+- `EVFILT_VNODE` による `WatchPaths` の実装詳細。比較表は断定していたが man の裏付けが無いので書いていない。
+- cron が実際にロードされているか。`launchctl print system/com.vix.cron` に `sudo` が要る。
+  `/System/Library/LaunchDaemons/com.vix.cron.plist` の存在のみ確認。
+
+### 提案時の誤り
+- **候補14として「LaunchDaemon と Keychain」を新規候補に挙げたが、すでに
+  `launchagent-claude-cli-keychain` として公開済みだった。** 候補を出す前に `README.md` の
+  記事一覧を確認していれば防げた。重複を書く寸前だった。**候補提案の前に既存記事を引くこと。**
