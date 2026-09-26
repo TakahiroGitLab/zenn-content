@@ -45,7 +45,7 @@ Ordered by publication. `BACKLOG.md` holds what is not written yet.
 
 | Slug | Title | State |
 | --- | --- | --- |
-| `gcal-entry-log-apps-script` | Googleカレンダーの「いつ登録したか」を見る画面をApps Scriptで作った | published |
+| `gcal-entry-log-apps-script` | Googleカレンダーの予定を「登録した日」で検索する — Calendar APIは作成日時で絞れない | published |
 | `gas-webapp-viewport-addmetatag` | Apps Scriptのウェブアプリでviewportが効かない — HtmlServiceはmetaタグを消している | published |
 | `css-liquid-glass-backdrop-filter` | CSSでliquid glassを作る — backdrop-filterだけでは灰色の板にしかならない | published |
 | `apple-calendar-entry-log-eventkit` | Apple Calendarの「いつ登録したか」を見るMacアプリをEventKitで作った | published |
@@ -55,4 +55,4 @@ Ordered by publication. `BACKLOG.md` holds what is not written yet.
 | `gas-chat-api-gcp-disabled` | Apps ScriptのChatは既定Cloudプロジェクトのまま読めた — ドキュメントは標準が要ると書いている | published |
 | `gmail-plain-text-proportional-font` | 空白で桁を揃えたメールは崩れる — Gmailはプレーンテキストを等幅で表示しない | published |
 | `swift-mainactor-reentrancy-generation` | @MainActorなのに古い結果が新しい結果を上書きする — actorはawaitで割り込まれる | published |
-| `launchd-startcalendarinterval-catchup` | 「launchdはスリープに強い」は半分だけ正しい — 追いつくのはStartCalendarIntervalだけ | **draft** |
+| `launchd-startcalendarinterval-catchup` | 「launchdはスリープに強い」は半分だけ正しい — 追いつくのはStartCalendarIntervalだけ | published |

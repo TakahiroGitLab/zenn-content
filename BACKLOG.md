@@ -3,7 +3,7 @@
 `README.md` が公開済みの一覧、`VERIFICATION.md` が各記事の検証記録。
 このファイルは**まだ書いていないもの**と、**書く手順で踏んだ落とし穴**を持つ。
 
-最終更新 2026-09-13（候補13を `launchd-startcalendarinterval-catchup` として執筆。候補14は公開済み記事との重複だったため撤回）。
+最終更新 2026-09-26（`launchd-startcalendarinterval-catchup` を公開。`gcal-entry-log-apps-script` の題を改めた）。
 
 ---
 
@@ -15,19 +15,24 @@
 
 | 記事 | 公開 |
 | --- | --- |
-| `gmail-plain-text-proportional-font` | 2026-09-11 |
+| `gmail-plain-text-proportional-font` | 2026-09-10 |
 | `swift-mainactor-reentrancy-generation` | 2026-09-12 |
+| `launchd-startcalendarinterval-catchup` | 2026-09-26 |
 
 Gmail の記事には宿題が1つ残っている。**「Gmail が実際に比例フォントで描画すること」を
 再現テストしていない。**著者の実体験と RFC 2646・2007年の記事・現行の拡張機能という
 傍証に依っている。スクリーンショットが1枚取れれば実測に変わる（`VERIFICATION.md` 参照）。
 
---- | --- |
-| `gmail-plain-text-proportional-font` | **⚠️ リポジトリと実態が食い違っている（2026-09-11 発見）。** frontmatter は `published: false` のままだが、URL は 200（公開中）。次の無関係な push で `published: false` が勝ち、**非公開に戻る事故**が起きうる。原因未確認 — ユーザーに確認中。意図した公開なら frontmatter を `true` にして push すること |
+（2026-09-11 に記録した「Gmail 記事の frontmatter が `published: false` のまま公開中」という
+食い違いは解消済み。2026-09-26 時点で frontmatter は `true`、URL は 200。）
 
-残っている宿題（公開状態の対処とは別）。**「Gmail が実際に比例フォントで描画すること」を、こちらで再現テストしていない。**
-著者の実体験と RFC 2646・2007年の記事・現行の拡張機能という傍証に依っている。
-スクリーンショットが1枚取れれば、記事で唯一の伝聞部分が実測に変わる（`VERIFICATION.md` の同名セクション参照）。
+### 題の改訂（2026-09-26）
+
+`gcal-entry-log-apps-script` の旧題「Googleカレンダーの「いつ登録したか」を見る画面をApps Scriptで作った」は
+**不正確だった。** ツールは予定ごとの作成日時を表示するものではなく、**作成日時の期間で予定を検索する**もの。
+「Googleカレンダーの予定を「登録した日」で検索する — Calendar APIは作成日時で絞れない」に改め、
+他記事からのリンク文言もすべて差し替えた。slug（URL）は変えていない。
+`apple-calendar-entry-log-eventkit` の題も同じ「いつ登録したか」を見る、の型なので、同じ指摘が当たりうる（未対応）。
 
 ---
 
@@ -161,7 +166,7 @@ Apple Calendar の登録日時を見る Mac アプリ。2026-09-10 に8コミッ
 ### macOS のスケジューラ（プロジェクト横断）
 
 **このブロックは決着済み。** 外部の cron vs launchd 比較表をきっかけに実測し、
-`launchd-startcalendarinterval-catchup` として執筆した（2026-09-13、draft）。
+`launchd-startcalendarinterval-catchup` として執筆した（2026-09-13）。2026-09-26 に公開。
 
 - **候補13**（「launchd はスリープに強い」は半分だけ正しい）→ **執筆済み**。
   測ったもの: `StartCalendarInterval` と `StartInterval` の非対称、合流して1回になること、

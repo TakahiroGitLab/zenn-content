@@ -8,7 +8,7 @@ published: true
 
 以前、Google カレンダーの予定を「**いつ登録したか**」で一覧するツールを Apps Script で作りました。
 
-[Googleカレンダーの「いつ登録したか」を見る画面をApps Scriptで作った](https://zenn.dev/takagit/articles/gcal-entry-log-apps-script)
+[Googleカレンダーの予定を「登録した日」で検索する — Calendar APIは作成日時で絞れない](https://zenn.dev/takagit/articles/gcal-entry-log-apps-script)
 
 同じものが Apple Calendar 側にも欲しくなったので、EventKit で作り直しました。SwiftUI の Mac アプリと、同じ内容を吐くコマンドラインの 2 つです。
 
@@ -391,6 +391,6 @@ static let isDemo = CommandLine.arguments.contains("--demo")
 
 Google カレンダー版と、その過程で踏んだ落とし穴も別記事にまとめてあります。
 
-- [Googleカレンダーの「いつ登録したか」を見る画面をApps Scriptで作った](https://zenn.dev/takagit/articles/gcal-entry-log-apps-script)
+- [Googleカレンダーの予定を「登録した日」で検索する — Calendar APIは作成日時で絞れない](https://zenn.dev/takagit/articles/gcal-entry-log-apps-script)
 - [Apps Scriptのウェブアプリでviewportが効かない — HtmlServiceはmetaタグを消している](https://zenn.dev/takagit/articles/gas-webapp-viewport-addmetatag)
 - [CSSでliquid glassを作る — backdrop-filterだけでは灰色の板にしかならない](https://zenn.dev/takagit/articles/css-liquid-glass-backdrop-filter)

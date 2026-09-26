@@ -1,5 +1,5 @@
 ---
-title: "Googleカレンダーの「いつ登録したか」を見る画面をApps Scriptで作った"
+title: "Googleカレンダーの予定を「登録した日」で検索する — Calendar APIは作成日時で絞れない"
 emoji: "📅"
 type: "tech"
 topics: ["googleappsscript", "gas", "googlecalendar", "clasp", "javascript"]

@@ -239,7 +239,7 @@ input:focus   { box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.18); }
 
 このデザインは、Google カレンダーの予定を「いつ登録したか」で一覧するツールに施したものです。作る過程で踏んだ Apps Script まわりの落とし穴は、別の記事にまとめてあります。
 
-- [Googleカレンダーの「いつ登録したか」を見る画面をApps Scriptで作った](https://zenn.dev/takagit/articles/gcal-entry-log-apps-script)
+- [Googleカレンダーの予定を「登録した日」で検索する — Calendar APIは作成日時で絞れない](https://zenn.dev/takagit/articles/gcal-entry-log-apps-script)
 - [Apps Scriptのウェブアプリでviewportが効かない — HtmlServiceはmetaタグを消している](https://zenn.dev/takagit/articles/gas-webapp-viewport-addmetatag)
 
 同じツールの Apple Calendar 版は、ネイティブアプリとして作り直しました。

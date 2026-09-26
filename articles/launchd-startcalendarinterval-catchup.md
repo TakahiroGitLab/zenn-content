@@ -3,7 +3,7 @@ title: "「launchdはスリープに強い」は半分だけ正しい — 追い
 emoji: "⏰"
 type: "tech"
 topics: ["macos", "launchd", "cron", "launchagent", "shell"]
-published: false
+published: true
 ---
 
 Mac で、あるフォルダを毎日 `git pull` したくなりました。調べると cron と launchd の比較表がいくらでも出てきます。そしてどれも同じ結論に着地します。**launchd を使え、cron と違ってスリープ中に逃した回を追いかけてくれるから。**
