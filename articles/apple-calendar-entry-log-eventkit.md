@@ -1,5 +1,5 @@
 ---
-title: "Apple Calendarの「いつ登録したか」を見るMacアプリをEventKitで作った"
+title: "Apple Calendarの予定を「登録した日」で検索するMacアプリ — EventKitも作成日時で絞れない"
 emoji: "🍎"
 type: "tech"
 topics: ["swift", "swiftui", "eventkit", "macos", "applescript"]

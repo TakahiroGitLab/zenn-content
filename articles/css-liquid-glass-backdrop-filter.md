@@ -244,7 +244,7 @@ input:focus   { box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.18); }
 
 同じツールの Apple Calendar 版は、ネイティブアプリとして作り直しました。
 
-- [Apple Calendarの「いつ登録したか」を見るMacアプリをEventKitで作った](https://zenn.dev/takagit/articles/apple-calendar-entry-log-eventkit)
+- [Apple Calendarの予定を「登録した日」で検索するMacアプリ — EventKitも作成日時で絞れない](https://zenn.dev/takagit/articles/apple-calendar-entry-log-eventkit)
 - [XcodeなしでSwiftUIのMacアプリを作る — .appは手で組めるが、ad-hoc署名だけは省略できない](https://zenn.dev/takagit/articles/swiftui-app-without-xcode)
 
 ---

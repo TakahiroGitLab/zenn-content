@@ -3,7 +3,7 @@
 `README.md` が公開済みの一覧、`VERIFICATION.md` が各記事の検証記録。
 このファイルは**まだ書いていないもの**と、**書く手順で踏んだ落とし穴**を持つ。
 
-最終更新 2026-09-26（`launchd-startcalendarinterval-catchup` を公開。`gcal-entry-log-apps-script` の題を改めた）。
+最終更新 2026-09-26（`launchd-startcalendarinterval-catchup` を公開。`gcal-entry-log-apps-script` と `apple-calendar-entry-log-eventkit` の題を改めた）。
 
 ---
 
@@ -32,7 +32,7 @@ Gmail の記事には宿題が1つ残っている。**「Gmail が実際に比�
 **不正確だった。** ツールは予定ごとの作成日時を表示するものではなく、**作成日時の期間で予定を検索する**もの。
 「Googleカレンダーの予定を「登録した日」で検索する — Calendar APIは作成日時で絞れない」に改め、
 他記事からのリンク文言もすべて差し替えた。slug（URL）は変えていない。
-`apple-calendar-entry-log-eventkit` の題も同じ「いつ登録したか」を見る、の型なので、同じ指摘が当たりうる（未対応）。
+同じ型だった `apple-calendar-entry-log-eventkit` も同日に「Apple Calendarの予定を「登録した日」で検索するMacアプリ — EventKitも作成日時で絞れない」へ改め、2本の題を対にした。
 
 ---
 

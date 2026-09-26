@@ -48,7 +48,7 @@ Ordered by publication. `BACKLOG.md` holds what is not written yet.
 | `gcal-entry-log-apps-script` | Googleカレンダーの予定を「登録した日」で検索する — Calendar APIは作成日時で絞れない | published |
 | `gas-webapp-viewport-addmetatag` | Apps Scriptのウェブアプリでviewportが効かない — HtmlServiceはmetaタグを消している | published |
 | `css-liquid-glass-backdrop-filter` | CSSでliquid glassを作る — backdrop-filterだけでは灰色の板にしかならない | published |
-| `apple-calendar-entry-log-eventkit` | Apple Calendarの「いつ登録したか」を見るMacアプリをEventKitで作った | published |
+| `apple-calendar-entry-log-eventkit` | Apple Calendarの予定を「登録した日」で検索するMacアプリ — EventKitも作成日時で絞れない | published |
 | `swiftui-app-without-xcode` | XcodeなしでSwiftUIのMacアプリを作る — .appは手で組めるが、ad-hoc署名だけは省略できない | published |
 | `claude-cli-llm-provider` | APIキーなしで個人ツールにAIを足す — claude CLIは楽だが、無視された引数が静かに嘘をつく | published |
 | `launchagent-claude-cli-keychain` | 常駐させたclaude CLIがNot logged inになる — PATHを直しても直らない理由はKeychainにある | published |

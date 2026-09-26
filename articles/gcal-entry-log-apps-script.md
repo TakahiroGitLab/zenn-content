@@ -236,7 +236,7 @@ https://github.com/TakahiroGitLab/gcal-entry-log
 
 この軸が手放せなくなったので、Apple Calendar 版も作りました。EventKit の Mac アプリです。**やりたいことは同じなのに、詰まる場所が一つも重なりませんでした。** EventKit も作成日時では検索できない、という一点だけが共通です。
 
-[Apple Calendarの「いつ登録したか」を見るMacアプリをEventKitで作った](https://zenn.dev/takagit/articles/apple-calendar-entry-log-eventkit)
+[Apple Calendarの予定を「登録した日」で検索するMacアプリ — EventKitも作成日時で絞れない](https://zenn.dev/takagit/articles/apple-calendar-entry-log-eventkit)
 
 ## 関連記事
 
